@@ -250,6 +250,51 @@ offsets.h:	Offsets
 	./Offsets -h
 
 #
+# Rules for running with QEMU
+#
+
+#
+# Location of the QEMU binary
+#
+# DSL version
+QEMU = /usr/local/dcs/bin/qemu-system-i386
+# Main-net version
+# QEMU = /home/course/csci352/bin/qemu-system-i386
+
+# try to generate a unique GDB port
+GDBPORT = $(shell expr `id -u` % 5000 + 25000)
+
+# QEMU's gdb stub command line changed in 0.11
+QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
+	then echo "-gdb tcp::$(GDBPORT)"; \
+	else echo "-s -p $(GDBPORT)"; fi)
+
+# options for QEMU
+#
+# run 'make' with -DQEMUEXTRA=xxx to add option 'xxx' when QEMU is run
+#
+# does not include a '-serial' option, as that may or may not be needed
+QEMUOPTS = -drive file=disk.img,index=0,media=disk,format=raw $(QEMUEXTRA)
+
+# how to create the .gdbinit config file if we need it
+.gdbinit: gdbinit.tmpl
+	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@
+
+qemu: disk.img
+	$(QEMU) -serial mon:stdio $(QEMUOPTS)
+
+qemu-nox: disk.img
+	$(QEMU) -nographic $(QEMUOPTS)
+
+qemu-gdb: disk.img .gdbinit
+	@echo "*** Now run 'gdb'." 1>&2
+	$(QEMU) -serial mon:stdio $(QEMUOPTS) -S $(QEMUGDB)
+
+qemu-nox-gdb: disk.img .gdbinit
+	@echo "*** Now run 'gdb'." 1>&2
+	$(QEMU) -nographic $(QEMUOPTS) -S $(QEMUGDB)
+
+#
 # Clean out this directory
 #
 
@@ -288,20 +333,20 @@ depend:
 
 bootstrap.o: bootstrap.h
 startup.o: bootstrap.h
-isr_stubs.o: bootstrap.h
+isr_stubs.o: bootstrap.h offsets.h
 cio.o: cio.h lib.h support.h x86arch.h x86pic.h
 libc.o: lib.h cio.h
 support.o: support.h lib.h cio.h x86arch.h x86pic.h bootstrap.h
-clock.o: x86arch.h x86pic.h x86pit.h common.h params.h kdefs.h cio.h
-clock.o: support.h lib.h clock.h queues.h kernel.h stacks.h kmem.h procs.h
-clock.o: sched.h sio.h compat.h syscalls.h
+clock.o: common.h params.h kdefs.h cio.h support.h lib.h clock.h queues.h
+clock.o: procs.h stacks.h kmem.h sched.h sio.h compat.h kernel.h x86arch.h
+clock.o: syscalls.h x86pic.h x86pit.h
 kernel.o: common.h params.h kdefs.h cio.h support.h lib.h kernel.h stacks.h
 kernel.o: kmem.h procs.h x86arch.h queues.h users.h bootstrap.h clock.h
 kernel.o: sched.h sio.h compat.h syscalls.h
 kmem.o: compat.h common.h params.h kdefs.h cio.h support.h lib.h queues.h
 kmem.o: procs.h stacks.h kmem.h sched.h kernel.h x86arch.h bootstrap.h
 procs.o: common.h params.h kdefs.h cio.h support.h lib.h procs.h stacks.h
-procs.o: kmem.h kernel.h x86arch.h
+procs.o: kmem.h kernel.h x86arch.h sched.h queues.h
 queues.o: common.h params.h kdefs.h cio.h support.h lib.h kernel.h stacks.h
 queues.o: kmem.h procs.h x86arch.h queues.h
 sched.o: common.h params.h kdefs.h cio.h support.h lib.h kernel.h stacks.h
@@ -310,7 +355,7 @@ sio.o: compat.h common.h params.h kdefs.h cio.h support.h lib.h queues.h
 sio.o: procs.h stacks.h kmem.h sched.h kernel.h x86arch.h ./uart.h x86pic.h
 sio.o: sio.h
 stacks.o: common.h params.h kdefs.h cio.h support.h lib.h kernel.h stacks.h
-stacks.o: kmem.h procs.h x86arch.h
+stacks.o: kmem.h procs.h x86arch.h bootstrap.h
 syscalls.o: common.h params.h kdefs.h cio.h support.h lib.h x86arch.h
 syscalls.o: x86pic.h ./uart.h bootstrap.h syscalls.h queues.h sched.h procs.h
 syscalls.o: stacks.h kmem.h clock.h sio.h compat.h kernel.h

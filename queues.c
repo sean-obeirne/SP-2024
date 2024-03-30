@@ -436,3 +436,51 @@ status_t _que_remove_ptr( queue_t *q, void *data )
 	
 	return S_OK;
 }
+
+/*
+** Debugging/tracing routines
+*/
+
+/**
+** _que_dump(msg,que)
+**
+** dump the contents of the specified queue_t to the console
+**
+** @param msg  Optional message to print
+** @param que  queue_t to dump
+*/
+void _que_dump( const char *msg, queue_t *que ) {
+
+    // report on this queue
+    __cio_printf( "%s: ", msg );
+    if( que == NULL ) {
+        __cio_puts( "NULL???\n" );
+        return;
+    }
+
+    // first, the basic data
+    __cio_printf( "head %08x tail %08x len %d",
+                  (uint32_t) que->head, (uint32_t) que->tail, que->length );
+
+    // next, how the queue is ordered
+    if( que->compare ) {
+        __cio_printf( " compare %08x\n", (uint32_t) que->compare );
+    } else {
+        __cio_puts( " FIFO\n" );
+    }
+
+    // if there are members in the Queue, dump the first nodes
+    if( que->length > 0 ) {
+        __cio_puts( " data: " );
+        qnode_t *tmp = que->head;
+        for( int i = 0; i < 5 && tmp != NULL; ++i, tmp = tmp->next ) {
+            __cio_printf( " [%08x]", (uint32_t) tmp->data );
+        }
+
+        if( tmp != NULL ) {
+            __cio_puts( " ..." );
+        }
+
+        __cio_putchar( '\n' );
+    }
+}
