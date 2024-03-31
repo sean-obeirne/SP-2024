@@ -8,5 +8,3 @@ prog.dis
 prog.nl
 offsets.h
 *.swp
-Makefile
-Makefile.bak
