@@ -1,0 +1,10 @@
+*.o
+*.lst
+*.b
+*.img
+BuildImage
+Offsets
+prog.dis
+prog.nl
+offsets.h
+*.swp

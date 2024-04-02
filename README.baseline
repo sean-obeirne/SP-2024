@@ -190,7 +190,7 @@ description of them.
 	function, which will interpret it. It is primarily intended for
 	generating debugging output while the OS is running.
 
-   processes.c, processes.h: support functions
+   procs.c, procs.h: support functions
 	_pcb_zombify() does the actual work required for processes to
 	exit or to be killed
 

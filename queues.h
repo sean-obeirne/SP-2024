@@ -143,6 +143,16 @@ status_t _que_remove( queue_t *q, void **data );
 */
 status_t _que_remove_ptr( queue_t *q, void *data );
 
+/**
+** _que_dump(msg,que)
+**
+** dump the contents of the specified queue_t to the console
+**
+** @param msg  Optional message to print
+** @param que  queue_t to dump
+*/
+void _que_dump( const char *msg, queue_t *que );
+
 #endif
 // !SP_ASM_SRC
 
