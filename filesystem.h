@@ -1,7 +1,8 @@
 #ifndef FAT32_H_
 #define FAT32_H_
 
-#include <stdint.h> // Include necessary standard headers
+// #include <stdint.h> // Include necessary standard headers
+#include "common.h"
 
 // Define constants, macros, and data structures specific to FAT32 filesystem
 
@@ -41,7 +42,7 @@ int fat32_mount(Fat32FileSystem *fs);
  * @param offset Offset within the file to start reading from.
  * @return Number of bytes read on success, -1 on failure.
  */
-int fat32_read_file(Fat32FileSystem *fs, const char *filename, void *buffer, size_t size, off_t offset);
+int fat32_read_file(Fat32FileSystem *fs, const char *filename, void *buffer, uint32_t size, int32_t offset);
 
 /**
  * Write data to a file in the FAT32 filesystem.
@@ -52,7 +53,7 @@ int fat32_read_file(Fat32FileSystem *fs, const char *filename, void *buffer, siz
  * @param offset Offset within the file to start writing to.
  * @return Number of bytes written on success, -1 on failure.
  */
-int fat32_write_file(Fat32FileSystem *fs, const char *filename, const void *buffer, size_t size, off_t offset);
+int fat32_write_file(Fat32FileSystem *fs, const char *filename, const void *buffer, uint32_t size, int32_t offset);
 
 // Add more function prototypes as needed for your FAT32 filesystem implementation
 
