@@ -23,6 +23,7 @@
 #include "sio.h"
 #include "support.h"
 #include "syscalls.h"
+#include "filesystem.h"
 
 // need address of the init() function
 USERMAIN( init );
@@ -359,6 +360,10 @@ void _kinit( void ) {
 	_sio_init();
 	_sys_init();
 #if TRACING_SYSCALLS || TRACING_SYSRETS
+	__delay(50);
+#endif
+  _fs_init();
+#if TRACING_FS
 	__delay(50);
 #endif
 

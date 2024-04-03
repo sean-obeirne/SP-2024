@@ -175,6 +175,7 @@ typedef int32_t status_t;
 #define TRACE_SIO_ISR       0x2000
 #define TRACE_SIO_RD        0x4000
 #define TRACE_SIO_WR        0x8000
+#define TRACE_FS            0x10000
 
 // compile-time expressions for testing trace options
 // usage:  #if TRACING_thing
@@ -194,6 +195,7 @@ typedef int32_t status_t;
 #define TRACING_SIO_ISR     ((TRACE & TRACE_SIO_ISR) != 0)
 #define TRACING_SIO_RD      ((TRACE & TRACE_SIO_RD) != 0)
 #define TRACING_SIO_WR      ((TRACE & TRACE_SIO_WR) != 0)
+#define TRACING_FS          ((TRACE & TRACE_FS) != 0)
 
 #define TRACING_SOMETHING   (TRACE != 0)
 
@@ -217,6 +219,7 @@ typedef int32_t status_t;
 #define TRACING_SIO_ISR     0
 #define TRACING_SIO_RD      0
 #define TRACING_SIO_WR      0
+#define TRACING_FS          0
 
 #define TRACING_SOMETHING   0
 

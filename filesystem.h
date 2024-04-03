@@ -14,7 +14,39 @@
 typedef struct {
     // Define your filesystem structures here
     // e.g., directory entry structure, FAT entry structure, etc.
-} Fat32FileSystem;
+    // Boot Sector Information
+    uint16_t bytes_per_sector;
+    uint8_t sectors_per_cluster;
+    uint16_t reserved_sector_count;
+    uint8_t number_of_fats;
+    uint32_t total_sectors;
+    uint32_t fat_size_sectors;
+    uint32_t root_directory_cluster;
+
+    // FAT Information
+    uint32_t *fat;
+    uint16_t fat_entry_size;
+
+    // Root Directory Information
+    uint8_t *root_directory;
+    uint16_t root_directory_entries;
+
+    // Current Directory Information
+    uint32_t current_directory_cluster;
+
+    // File System Metadata
+    char volume_label[12];
+    char file_system_type[8];
+
+    // Disk Information
+    void *disk;
+
+    // Cache or Buffer
+    void *buffer;
+
+    // Error Handling
+    int last_error;
+} FileSystem;
 
 // Function prototypes for FAT32 filesystem operations
 
@@ -24,14 +56,14 @@ typedef struct {
  * @param disk Pointer to the disk device.
  * @return 0 on success, -1 on failure.
  */
-int fat32_init(Fat32FileSystem *fs, void *disk);
+int _fs_init( void );
 
 /**
  * Mount the FAT32 filesystem.
  * @param fs Pointer to the filesystem structure to mount.
  * @return 0 on success, -1 on failure.
  */
-int fat32_mount(Fat32FileSystem *fs);
+int _fs_mount(FileSystem *fs);
 
 /**
  * Read data from a file in the FAT32 filesystem.
@@ -42,7 +74,7 @@ int fat32_mount(Fat32FileSystem *fs);
  * @param offset Offset within the file to start reading from.
  * @return Number of bytes read on success, -1 on failure.
  */
-int fat32_read_file(Fat32FileSystem *fs, const char *filename, void *buffer, uint32_t size, int32_t offset);
+int _fs_read_file(FileSystem *fs, const char *filename, void *buffer, uint32_t size, int32_t offset);
 
 /**
  * Write data to a file in the FAT32 filesystem.
@@ -53,7 +85,7 @@ int fat32_read_file(Fat32FileSystem *fs, const char *filename, void *buffer, uin
  * @param offset Offset within the file to start writing to.
  * @return Number of bytes written on success, -1 on failure.
  */
-int fat32_write_file(Fat32FileSystem *fs, const char *filename, const void *buffer, uint32_t size, int32_t offset);
+int _fs_write_file(FileSystem *fs, const char *filename, const void *buffer, uint32_t size, int32_t offset);
 
 // Add more function prototypes as needed for your FAT32 filesystem implementation
 
