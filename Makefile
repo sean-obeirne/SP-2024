@@ -15,15 +15,15 @@
 #
 
 OS_C_SRC = clock.c kernel.c kmem.c procs.c queues.c sched.c sio.c stacks.c \
-	   syscalls.c
+	   syscalls.c filesystem.c
 OS_C_OBJ = clock.o kernel.o kmem.o procs.o queues.o sched.o sio.o stacks.o \
-	   syscalls.o
+	   syscalls.o filesystem.o
 
 OS_S_SRC =
 OS_S_OBJ =
 
 OS_HDRS  = clock.h common.h compat.h kdefs.h kernel.h kmem.h offsets.h \
-	   params.h procs.h queues.h sched.h sio.h stacks.h syscalls.h
+	   params.h procs.h queues.h sched.h sio.h stacks.h syscalls.h filesystem.h
 
 OS_LIBS =
 
@@ -124,7 +124,7 @@ SOURCES = $(BOOT_SRC) $(FMK_SRCS) $(OS_SRCS) $(USR_SRCS)
 GEN_OPTIONS = -DCLEAR_BSS -DGET_MMAP -DSP_CONFIG
 DBG_OPTIONS = -DTRACE_CX -DSTATUS=3
 
-USER_OPTIONS = $(GEN_OPTIONS) $(DBG_OPTIONS)
+USER_OPTIONS = $(GEN_OPTIONS) $(DBG_OPTIONS) -DUSER_SHELL
 
 ##############################################################
 # YOU SHOULD NOT NEED TO CHANGE ANYTHING BELOW THIS POINT!!! #
@@ -244,7 +244,7 @@ BuildImage:	BuildImage.c
 	$(CC) -o BuildImage BuildImage.c
 
 Offsets:	Offsets.c procs.h stacks.h queues.h common.h
-	$(CC) -mx32 -std=c99 $(INCLUDES) -I../framework -o Offsets Offsets.c
+	$(CC) -m32 -std=c99 $(INCLUDES) -I../framework -o Offsets Offsets.c
 
 offsets.h:	Offsets
 	./Offsets -h
@@ -257,7 +257,8 @@ offsets.h:	Offsets
 # Location of the QEMU binary
 #
 # DSL version
-QEMU = /usr/local/dcs/bin/qemu-system-i386
+# QEMU = /usr/local/dcs/bin/qemu-system-i386
+QEMU = /usr/bin/qemu-system-i386
 # Main-net version
 # QEMU = /home/course/csci352/bin/qemu-system-i386
 
