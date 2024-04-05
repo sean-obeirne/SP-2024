@@ -6,9 +6,13 @@
 
 // Define constants, macros, and data structures specific to FAT32 filesystem
 
-// Example constants for FAT32 filesystem
-#define FAT32_BLOCK_SIZE 512
-#define FAT32_MAX_FILENAME_LENGTH 255
+// Constants for FAT32 filesystem
+#define MAX_FAT_ENTRIES 1000
+#define FAT_EOC 0xFFFF
+#define BLOCK_SIZE 4096 // TODO SEAN: make this pull from somewhere
+#define SECTOR_SIZE 512
+#define MAX_FILENAME_LENGTH 255
+// #define ROOT_LEN 512 // how many files can be in root?
 
 // Example data structures for FAT32 filesystem
 typedef struct {
@@ -44,6 +48,9 @@ typedef struct {
     // Cache or Buffer
     void *buffer;
 
+    // Mounted status
+    bool_t mounted;
+
     // Error Handling
     int last_error;
 } FileSystem;
@@ -63,7 +70,7 @@ int _fs_init( void );
  * @param fs Pointer to the filesystem structure to mount.
  * @return 0 on success, -1 on failure.
  */
-int _fs_mount(FileSystem *fs);
+int _fs_mount( void );
 
 /**
  * Read data from a file in the FAT32 filesystem.
@@ -74,7 +81,7 @@ int _fs_mount(FileSystem *fs);
  * @param offset Offset within the file to start reading from.
  * @return Number of bytes read on success, -1 on failure.
  */
-int _fs_read_file(FileSystem *fs, const char *filename, void *buffer, uint32_t size, int32_t offset);
+int _fs_read_file(const char *filename, void *buffer, uint32_t size, int32_t offset);
 
 /**
  * Write data to a file in the FAT32 filesystem.
@@ -85,7 +92,7 @@ int _fs_read_file(FileSystem *fs, const char *filename, void *buffer, uint32_t s
  * @param offset Offset within the file to start writing to.
  * @return Number of bytes written on success, -1 on failure.
  */
-int _fs_write_file(FileSystem *fs, const char *filename, const void *buffer, uint32_t size, int32_t offset);
+int _fs_write_file(const char *filename, const void *buffer, uint32_t size, int32_t offset);
 
 // Add more function prototypes as needed for your FAT32 filesystem implementation
 
