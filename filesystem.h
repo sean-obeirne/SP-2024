@@ -9,12 +9,32 @@
 // Constants for FAT32 filesystem
 #define MAX_FAT_ENTRIES 1000
 #define FAT_EOC 0xFFFF
+#define DISK_SIZE 1024 // disk is this many blocks
 #define BLOCK_SIZE 4096 // TODO SEAN: make this pull from somewhere
-#define SECTOR_SIZE 512
+#define SECTOR_SIZE 512 // 8 sectors = 1 block
 #define MAX_FILENAME_LENGTH 255
 // #define ROOT_LEN 512 // how many files can be in root?
 
-// Example data structures for FAT32 filesystem
+extern char *fs_buffer;
+
+typedef struct {
+    char filename[MAX_FILENAME_LENGTH];  // Name of the file or directory
+    uint32_t size;                       // Size of the file in bytes
+    uint8_t attributes;                  // Attributes of the file (e.g., read-only, hidden, directory)
+    uint32_t block;                      // Starting block of the file's data
+    // Add more fields as needed for your filesystem implementation
+} DirectoryEntry;
+
+typedef struct {
+  uint32_t next_cluster;
+  uint8_t status;
+} FATEntry;
+
+typedef struct FAT {
+    FATEntry entries[MAX_FAT_ENTRIES]; // Array of FAT entries
+    // Additional fields or metadata related to the FAT table
+} FAT;
+
 typedef struct {
     // Define your filesystem structures here
     // e.g., directory entry structure, FAT entry structure, etc.
@@ -28,12 +48,12 @@ typedef struct {
     uint32_t root_directory_cluster;
 
     // FAT Information
-    uint32_t *fat;
+    FAT *fat;
     uint16_t fat_entry_size;
 
     // Root Directory Information
-    uint8_t *root_directory;
     uint16_t root_directory_entries;
+    DirectoryEntry *root_directory;
 
     // Current Directory Information
     uint32_t current_directory_cluster;
@@ -65,6 +85,8 @@ typedef struct {
  */
 int _fs_init( void );
 
+void clear_fs_buffer();
+
 /**
  * Mount the FAT32 filesystem.
  * @param fs Pointer to the filesystem structure to mount.
@@ -81,7 +103,7 @@ int _fs_mount( void );
  * @param offset Offset within the file to start reading from.
  * @return Number of bytes read on success, -1 on failure.
  */
-int _fs_read_file(const char *filename, void *buffer, uint32_t size, int32_t offset);
+int _fs_read_file(const char *filename);
 
 /**
  * Write data to a file in the FAT32 filesystem.
@@ -92,9 +114,10 @@ int _fs_read_file(const char *filename, void *buffer, uint32_t size, int32_t off
  * @param offset Offset within the file to start writing to.
  * @return Number of bytes written on success, -1 on failure.
  */
-int _fs_write_file(const char *filename, const void *buffer, uint32_t size, int32_t offset);
+int _fs_write_file(const char *filename);
 
 // Add more function prototypes as needed for your FAT32 filesystem implementation
+
 
 #endif /* FAT32_H_ */
 

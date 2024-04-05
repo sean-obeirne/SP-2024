@@ -4,30 +4,12 @@
 #include "cio.h" // Include console output
 #include "kmem.h" // Include memory management
 
-// #include <stdio.h> // Include necessary standard headers
-
-
-typedef struct {
-  uint32_t next_cluster;
-  uint8_t status;
-} FATEntry;
-
-typedef struct FAT {
-    FATEntry entries[MAX_FAT_ENTRIES]; // Array of FAT entries
-    // Additional fields or metadata related to the FAT table
-} FAT;
-
-typedef struct {
-    char filename[MAX_FILENAME_LENGTH];  // Name of the file or directory
-    uint32_t size;                       // Size of the file in bytes
-    uint8_t attributes;                  // Attributes of the file (e.g., read-only, hidden, directory)
-    uint32_t cluster;                    // Starting cluster of the file's data
-    // Add more fields as needed for your filesystem implementation
-} DirectoryEntry;
 
 // Declare global variables for FileSystem and disk
 static FileSystem fs;
+char *fs_buffer;
 static void *disk;
+unsigned char disk_image[];
 
 int _fs_init( void ) {
     // Implement FAT32 initialization logic here
@@ -44,7 +26,7 @@ int _fs_init( void ) {
 //Q? do clusters=blocks=pages? and do sectors=segments?
 
     // FAT Information
-    fs.fat = _km_page_alloc( fs.fat_size_sectors / fs.sectors_per_cluster );
+    fs.fat = (FAT*)_km_page_alloc( fs.fat_size_sectors * SECTOR_SIZE );
     // __cio_printf("THIS VALUE: %d IS IT", fs.fat_size_sectors / fs.sectors_per_cluster);
     if( fs.fat == NULL ){
       return -1;
@@ -81,8 +63,8 @@ int _fs_init( void ) {
     fs.disk = NULL;
 
     // Cache or Buffer
-    fs.buffer = _km_page_alloc( BLOCK_SIZE );
-    if( fs.buffer == NULL ){
+    fs_buffer = _km_page_alloc( BLOCK_SIZE );
+    if( fs_buffer == NULL ){
       //TODO SEAN: free fs.fat
       //TODO SEAN: free fs.root_directory
       return -1;
@@ -100,24 +82,77 @@ int _fs_init( void ) {
     return 0;
 }
 
-int read_block(int block_number, void *buffer){
-  if (block_number < 0 || block_number >= fs.sectors_per_cluster) {
-      __cio_puts("\nREAD_BLOCK FAILED\n");
+void clear_fs_buffer() {
+    // Fill the fs_buffer with zeros
+    __memset(fs_buffer, 0, BLOCK_SIZE);
+}
+
+int read_block(int block_number){
+  if (block_number < 0 || block_number >= DISK_SIZE) {
         return -1; // Invalid block number
   }
 
-  for(int i = 0; i < BLOCK_SIZE / SECTOR_SIZE; i++){ // 8 runs
-    read_sector( i, buffer );
-    __cio_printf("");
-    __cio_write( fs.fat, 10 );
+  int start_index = block_number * BLOCK_SIZE;
+  for(int i = 0; i < BLOCK_SIZE; i++){ // 8 runs
+    ((char *)fs_buffer)[i] = disk_image[start_index + i];
+    // read_sector( i, buffer );
+    // __cio_printf("Block has been read, ");
+    // __cio_write( buffer, 10 );
   }
 
   return 0; // Return 0 on success
 }
 
+int write_block(int block_number, void *data) {
+    // Check if block_number is valid
+    if (block_number < 0 || block_number >= DISK_SIZE) {
+        return -1; // Invalid block number
+    }
+
+    // Calculate the offset in bytes for the block
+    // uint32_t byte_offset = block_number * BLOCK_SIZE + offset;
+
+    // Write data to the disk image
+    // for (uint32_t i = 0; i < BLOCK_SIZE; i++) {
+    //     disk_image[offset + i] = *((unsigned char *)data + i);
+    // }
+
+    // Write data to the disk image
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        // __cio_printf("We are assigning disk_image: %d", byte_offset);
+        disk_image[i] = *((unsigned char *)data + i);
+    }
+
+    return 0; // Write operation successful
+}
+
 int read_sector( int sector_number, void *buffer ){
   __memset(buffer, SECTOR_SIZE, 48);
   return 0; // Return 0 on success
+}
+
+int add_directory_entry(const char *filename) {
+    // Search for an empty slot in the root directory
+    int empty_slot_index = -1;
+    __cio_printf("ROOT DIRECTORY ENTRIES: %d\n", fs.root_directory_entries);
+    for (int i = 0; i < fs.root_directory_entries; i++) {
+        if (fs.root_directory[i].filename[0] == '\0') {
+            empty_slot_index = i;
+            break;
+        }
+    }
+    // If no empty slot found, return an error
+    if (empty_slot_index == -1) {
+        return -1; // Root directory is full
+    }
+    
+    // Populate the empty slot with the new entry details
+    __strcpy(fs.root_directory[empty_slot_index].filename, filename);
+    fs.root_directory[empty_slot_index].size = 0; // Set size to 0 initially
+    // Assign cluster index based on the empty slot index
+    fs.root_directory[empty_slot_index].block = empty_slot_index;
+
+    return 0; // Success
 }
 
 int _fs_mount( void ) {
@@ -126,19 +161,96 @@ int _fs_mount( void ) {
     return 0; // Return 0 on success
 }
 
-int _fs_read_file(const char *filename, void *buffer, uint32_t size, int32_t offset) {
+int _fs_read_file(const char *filename) {
     // Implement FAT32 file read logic here
     // Read data from the specified file into the buffer
-    
-    return -1; // Return -1 for now as this is a stub
+    // Traverse the FAT to find the file's data blocks
+
+    // Search for the file in the root directory
+    DirectoryEntry *entry = NULL;
+    // find file from filename
+    for(int i = 0; i < fs.root_directory_entries; i++){
+      __cio_printf("Filename %s from root_directory, also %s found!\n", fs.root_directory[i].filename, filename);
+      if(__strcmp(fs.root_directory[i].filename, filename) == 0){
+            entry = &fs.root_directory[i];
+            __cio_printf("Filename %s found!\n", entry);
+            break;
+      }
+    }
+    if (entry == NULL) {
+        // File not found, handle error
+        __cio_printf("WE ARE HERE IN NULL ENTRY\n");
+        __cio_printf("Filename %s NOT found!\n", entry);
+        return -1;
+    }
+
+  int start_block = entry->block;
+  int current_block = start_block;
+  while (current_block != FAT_EOC) {
+      // Calculate the block number corresponding to the current cluster
+      int block_number = current_block;
+      
+      // Read the block from the disk image into the buffer
+      read_block(block_number);
+
+      // Move buffer to the next position
+      fs_buffer += BLOCK_SIZE;
+
+      // Move to the next cluster in the FAT
+      current_block = fs.fat->entries[current_block].next_cluster;
+  }
+  return -1; // Return -1 for now as this is a stub
 }
 
-int _fs_write_file(const char *filename, const void *buffer, uint32_t size, int32_t offset) {
-    // Implement FAT32 file write logic here
-    // Write data from the buffer to the specified file
-    return -1; // Return -1 for now as this is a stub
+
+int _fs_write_file(const char *filename) {
+    // Find the directory entry for the specified filename
+    DirectoryEntry *entry = NULL;
+    for (int i = 0; i < fs.root_directory_entries; i++) {
+        if (__strcmp(fs.root_directory[i].filename, filename) == 0) {
+            entry = &fs.root_directory[i];
+            __cio_printf("Filename %s found!\n", entry);
+            break;
+        }
+    }
+
+    // If the file doesn't exist, return an error
+    if (entry == NULL) {
+        __cio_printf("Filename %s NOT found!\n", entry);
+        return -1; // File not found
+    }
+
+    // Retrieve the starting cluster of the file
+    uint32_t current_block = entry->block;
+    // current_block = 0;
+
+    // Write data blocks into the file
+    const uint8_t *data_ptr = (const uint8_t *)fs_buffer;
+    while (current_block != FAT_EOC) {
+        // Calculate the block number corresponding to the current cluster
+        int block_number = current_block;
+
+        // Write data from the buffer to the disk image
+        write_block(block_number, data_ptr);
+        __cio_printf("Write block called on block #%d: ", block_number);
+        read_block(block_number);
+        __cio_printf("Read block called on block #%d: ", block_number);
+        __cio_puts(fs_buffer);
+        // Move to the next cluster in the FAT
+        uint32_t next_block = fs.fat->entries[current_block].next_cluster;
+        if (next_block != FAT_EOC) {
+            fs.fat->entries[current_block].next_cluster = FAT_EOC;
+            current_block = next_block;
+        } else {
+            break; // Already at the end of the file
+        }
+
+        // Move buffer to the next position
+        data_ptr += BLOCK_SIZE;
+    }
+
+    return 0; // Write operation successful
 }
+
 
 // Implement additional filesystem operations as needed
-
-
