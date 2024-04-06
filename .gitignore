@@ -8,3 +8,4 @@ prog.dis
 prog.nl
 offsets.h
 *.swp
+.vscode
