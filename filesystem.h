@@ -114,7 +114,7 @@ int _fs_read_file(const char *filename/*, void *buffer, size_t size, off_t offse
 ** @param offset Offset within the file to start writing from.
 ** @return Number of bytes written on success, -1 on failure.
 */
-int _fs_write_file(const char *filename/*, const void *buffer, size_t size, off_t offset*/);
+int _fs_write_file(const char *filename, const void *data/*, size_t size, off_t offset*/);
 
 /*
 ** Create a new file in the filesystem.
