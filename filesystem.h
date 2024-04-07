@@ -155,6 +155,13 @@ int _fs_open_file(const char *filename, const char *mode);
 int _fs_close_file(const char *filename);
 
 /*
+** Find a DirectoryEntry * for a given filename.
+** @param filename of the file to print.
+** @return 0 on success, -1 on failure.
+*/
+int _fs_print_file(const char *filename);
+
+/*
 ** Set the permissions of a file in the filesystem.
 ** @param filename Name of the file to set permissions for.
 ** @param permissions New permissions for the file.

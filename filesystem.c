@@ -187,58 +187,6 @@ int read_sector( int sector_number, void *buffer ){
   return 0; // Return 0 on success
 }
 
-int add_directory_entry(const char *filename) {
-    // Search for an empty slot in the root directory
-    int empty_slot_index = -1;
-    for (int i = 0; i < ROOT_DIRECTORY_ENTRIES; i++) {
-        if (fs.root_directory[i].filename[0] == '\0') {
-            empty_slot_index = i;
-            break;
-        }
-    }
-    // If no empty slot found, return an error
-    if (empty_slot_index == -1) {
-        __cio_puts("ROOT DIRECTORY FULL\n");
-        return -1; // Root directory is full
-    }
-    
-    // Populate the empty slot with the new entry details
-    __strcpy(fs.root_directory[empty_slot_index].filename, filename);
-    fs.root_directory[empty_slot_index].size = 0; // Set size to 0 initially
-    // Assign cluster index based on the empty slot index
-    fs.root_directory[empty_slot_index].block = empty_slot_index;
-
-    return 0; // Success
-}
-
-int remove_directory_entry(const char *filename) {
-    // Search for the directory entry with the given filename
-    int entry_index = -1;
-    for (int i = 0; i < ROOT_DIRECTORY_ENTRIES; i++) {
-        if (__strcmp(fs.root_directory[i].filename, filename) == 0) {
-            entry_index = i;
-            break;
-        }
-    }
-    
-    // If the entry is not found, return an error
-    if (entry_index == -1) {
-        return -1; // Directory entry not found
-    }
-    
-    // Populate the empty slot with the new entry details
-    __memset(fs.root_directory[entry_index].filename, MAX_FILENAME_LENGTH, '\0');
-    fs.root_directory[entry_index].size = 0;
-    fs.root_directory[entry_index].attributes = 0;
-    fs.root_directory[entry_index].block = 0;
-    // __strcpy(fs.root_directory[empty_slot_index].filename, filename);
-    // fs.root_directory[empty_slot_index].size = 0; // Set size to 0 initially
-    // Assign cluster index based on the empty slot index
-    // fs.root_directory[empty_slot_index].block = empty_slot_index;
-
-    return 0; // Success
-}
-
 // Function to generate a file larger than 4096 bytes
 void generate_large_file(int num_blocks) {
     char output_char = 65;
@@ -354,29 +302,6 @@ int _fs_init( void ) {
     return 0;
 }
 
-int _fs_mount( void ) {
-    // Implement FAT32 mounting logic here
-    // Mount the filesystem using the provided filesystem structure
-    return 0; // Return 0 on success
-}
-
-int _fs_create_file(const char *filename){
-  int add_entry = add_directory_entry(filename);
-  if(add_entry == -1){
-    __cio_printf("FAILED TO CREATE FILE");
-    return -1;
-  }
-  return 0;
-}
-
-int _fs_rename_file(const char *old_filename, const char *new_filename){
-  return -1;
-}
-
-int _fs_delete_file(const char *filename){
-  return remove_directory_entry(filename);
-}
-
 DirectoryEntry *_fs_find_file(const char *filename) {
     // Search for the file in the root directory
     DirectoryEntry *entry = NULL;
@@ -389,6 +314,61 @@ DirectoryEntry *_fs_find_file(const char *filename) {
     // __cio_printf("Entry for file %s found, size = %d, block = %d\n", entry->filename, entry->size, entry->block);
 
     return entry;
+}
+
+int _fs_mount( void ) {
+    // Implement FAT32 mounting logic here
+    // Mount the filesystem using the provided filesystem structure
+    return 0; // Return 0 on success
+}
+
+int _fs_create_file(const char *filename){
+  // No dplicate filenames
+  if(_fs_find_file(filename) != NULL){
+    __cio_printf("File %s already exists\n", filename);
+    return -1;
+  }
+
+  // Search for an empty slot in the root directory
+  int empty_slot_index = -1;
+  for (int i = 0; i < ROOT_DIRECTORY_ENTRIES; i++) {
+      if (fs.root_directory[i].filename[0] == '\0') {
+          empty_slot_index = i;
+          break;
+      }
+  }
+  // If no empty slot found, return an error
+  if (empty_slot_index == -1) {
+      __cio_puts("ROOT DIRECTORY FULL\n");
+      return -1;
+  }
+  
+  // Populate the empty slot with the new entry details
+  __strcpy(fs.root_directory[empty_slot_index].filename, filename);
+  fs.root_directory[empty_slot_index].size = 0; // Set size to 0 initially
+  // Assign cluster index based on the empty slot index
+  fs.root_directory[empty_slot_index].block = empty_slot_index;
+
+  __cio_printf("File %s created at block %d\n", fs.root_directory[empty_slot_index].filename, fs.root_directory[empty_slot_index].block);
+  return 0;
+}
+
+int _fs_rename_file(const char *old_filename, const char *new_filename){
+  DirectoryEntry *entry = _fs_find_file(old_filename);
+  __memcpy(entry->filename, new_filename, MAX_FILENAME_LENGTH);
+  return 0;
+}
+
+int _fs_delete_file(const char *filename){
+  DirectoryEntry *entry = _fs_find_file(filename);
+  if(entry == NULL){
+    __cio_printf("File %s does not exist", filename);
+    return -1;
+  }
+
+  __memclr(entry, sizeof(DirectoryEntry));
+
+  return 0; // Success
 }
 
 int _fs_open_file(const char *filename, const char *mode){
@@ -498,6 +478,13 @@ int _fs_close_file(const char *filename){
 }
 
 int _fs_print_file(const char *filename){
-  
+  DirectoryEntry *entry = _fs_find_file(filename);
+  if(entry == NULL){
+    __cio_printf("File \"%s\" not found\n");
+    return -1;
+  }
+  __cio_printf("This directory entry has filename %s, size %d, at block %d\nContent: ", entry->filename, entry->size, entry->block);
+  read_block(entry->block);
+  __cio_printf("%s", entry->filename);
   return 0;
 }
