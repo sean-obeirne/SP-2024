@@ -9,13 +9,13 @@
 // Declare global variables for FileSystem and disk
 static FileSystem fs;
 // static unsigned char disk_image[DISK_SIZE];
-static unsigned char disk_image[BLOCK_SIZE * DISK_SIZE];
+// static unsigned char disk_image[BLOCK_SIZE * DISK_SIZE];
+static unsigned char disk_image[TOTAL_SIZE];
 
 
 // Function to initialize the fs.buffer
 void init_fs_buffer( void ) {
-    // Fill the fs.buffer with zeros
-    __memset(fs.buffer, 0, BLOCK_SIZE);
+  fs.buffer = (char *)_km_page_alloc(1);
 }
 
 // Function to set the contents of the fs.buffer
@@ -29,12 +29,13 @@ void set_fs_buffer(const char *data, uint32_t size) {
 
 void clear_fs_buffer( void ) {
     // Fill the fs.buffer with zeros
-    __memset(fs.buffer, 0, BLOCK_SIZE);
+    __memclr(fs.buffer, BLOCK_SIZE);
 }
 
 int dump_fs_buffer( void ){
   __cio_printf("Dumping Buffer:\n");
   __cio_printf("%s\n", (char *)fs.buffer);
+  __delay(20);
   return 0;
 }
 
@@ -50,9 +51,9 @@ int dump_root(){
   return 0;
 }
 
-int dump_disk_image( int block_number ){
-  __cio_puts("Dumping Disk Image...\n");
-  __cio_printf("%s\n", disk_image);
+char *dump_disk_image_block( int block_number ){
+  // __cio_puts("Dumping Disk Image Block...\n");
+  // __cio_printf("%s\n", disk_image);
 
   char finished_string[BLOCK_SIZE];
   int finished_i = 0;
@@ -70,14 +71,59 @@ int dump_disk_image( int block_number ){
     }
     // __delay(10);disk_image
   }
-  __cio_printf("Number of succeeded reads: %d\n", num_succ);
-  __cio_printf("Accumulated string: %s\n", finished_string);
-  __cio_printf("Number of failed reads: %d\n", num_fail);
+  // __cio_printf("Number of succeeded reads: %d\n", num_succ);
+  // __cio_printf("Accumulated string: %s\n", finished_string);
+  // __cio_printf("Number of failed reads: %d\n", num_fail);
   return 0;
 }
 
+char *dump_disk_image( void ){
+  // __cio_puts("Dumping Disk Image Block...\n");
+  // __cio_printf("%s\n", disk_image);
+
+  char *finished_string = (char *)_km_page_alloc(DISK_SIZE);
+  if (finished_string == NULL) {
+    return NULL;
+  }
+  // Zero out the allocated memory
+  __memset(finished_string, 0, TOTAL_SIZE + 1);
+  // __cio_puts(finished_string);
+
+
+  int finished_i = 0;
+  int num_succ = 0;
+  int num_fail = 0;
+  for(int i = 0 * BLOCK_SIZE; i < TOTAL_SIZE; i++){
+    if (disk_image[i] != 0) {
+      finished_string[finished_i] = disk_image[i];
+      // __memcpy(finished_string, disk_image, 1);
+      // __cio_printf("%s", finished_string);
+      finished_i += 1;
+      num_succ += 1;
+    } else{
+      num_fail += 1;
+    }
+    // __delay(10);disk_image
+  }
+  // __cio_puts("HELLO?????");
+  // __cio_puts(finished_string);
+  finished_string[finished_i] = '\0';
+  // __cio_printf("Number of succeeded reads: %d\n", num_succ);
+  // __cio_printf("Accumulated string: %s\n", finished_string);
+  // __cio_printf("Number of failed reads: %d\n", num_fail);
+  return finished_string;
+  /*
+  // __cio_puts("Dumping Disk Image...\n");
+  // __cio_printf("%s\n", disk_image);
+  for(int i = 0; i < TOTAL_SIZE; i++){
+    dump_disk_image_block(i);
+  }
+  return 0;*/
+}
+
 void wipe_disk( void ){
-    __memset(disk_image, 0, BLOCK_SIZE * DISK_SIZE);
+    __memset(disk_image, 0, TOTAL_SIZE);
+    // __memclr(disk_image, BLOCK_SIZE * DISK_SIZE);
     // Set all elements of the disk_image array to 0
     // for (int i = 0; i < BLOCK_SIZE * DISK_SIZE; i++) {
     //     disk_image[i] = 0;
@@ -85,6 +131,7 @@ void wipe_disk( void ){
     // return 0;
 }
 
+// read block block_number to fs.buffer
 int read_block(int block_number){
   if (block_number < 0 || block_number >= DISK_SIZE) {
         return -1; // Invalid block number
@@ -94,6 +141,9 @@ int read_block(int block_number){
   // Copy data from disk image to file system buffer
   __memcpy(fs.buffer, &disk_image[start_index], BLOCK_SIZE);
   // __cio_printf("fs buffer: %s\n", (char *)fs.buffer);
+
+  // this block is now in fs.buffer, use appropriately
+  dump_fs_buffer();
 
   return 0; // Return 0 on success
 }
@@ -124,8 +174,8 @@ int write_block(int block_number, const uint8_t *data_ptr ) {
         if (data_ptr[i] == '\0'){
           break;
         }
-        __cio_printf("NEXT CHAR: %c", disk_image[start_index + i]);
-        __cio_printf(" VS: %c\n", data_ptr[i]);
+        // __cio_printf("NEXT CHAR: %c", disk_image[start_index + i]);
+        // __cio_printf(" VS: %c\n", data_ptr[i]);
         // __delay(10);
     }
 
@@ -189,9 +239,29 @@ int remove_directory_entry(const char *filename) {
     return 0; // Success
 }
 
+// Function to generate a file larger than 4096 bytes
+void generate_large_file(int num_blocks) {
+    char output_char = 65;
+    // Write blocks of data to the file
+    for (uint32_t i = 0; i < num_blocks; i++) { // num blocks
+        for (uint32_t j = 0; j < BLOCK_SIZE; j++) {
+            disk_image[i * BLOCK_SIZE + j] = output_char; // Write arbitrary data (e.g., 'A') to simulate file content
+        }
+        output_char += 1;
+    }
+
+    // Write remaining bytes if FILE_SIZE is not a multiple of BLOCK_SIZE
+    uint32_t remaining_bytes = 0;
+    for (uint32_t i = 0; i < remaining_bytes; i++) {
+        disk_image[(num_blocks) * BLOCK_SIZE + i] = 'C'; // Write arbitrary data (e.g., 'A') to simulate file content
+    }
+}
+
+
 
 /* FILESYSTEM OPERATIONS */
 int _fs_init( void ) {
+    __cio_puts("\nFilesystem Implementation:\n");
     // Implement FAT32 initialization logic here
     // Initialize the filesystem structure and perform any necessary setup
     
@@ -249,22 +319,34 @@ int _fs_init( void ) {
     fs.disk = NULL;
 
     // Cache or Buffer
-    // init_fs_buffer();
-    // clear_fs_buffer();
-    fs.buffer = _km_page_alloc( BLOCK_SIZE );
+    init_fs_buffer();
     if( fs.buffer == NULL ){
       //TODO SEAN: free fs.fat
       //TODO SEAN: free fs.root_directory
       return -1;
     }
+    clear_fs_buffer();
 
     // Mount status
     fs.mounted = false;
 
     // Error Handling
     fs.last_error = 0;
+    
+    wipe_disk();
 
-    // wipe_disk();
+    // TEST A BIG FILE
+    // __delay(20);
+    // generate_large_file(4);
+    // __delay(20);
+    // read_block(0);
+    // __delay(20);
+    // read_block(1);
+    // __delay(20);
+    // read_block(2);
+    // __delay(20);
+    // read_block(3);
+    // __delay(20);
 
     __cio_puts("CREATED FS\n");
 
@@ -304,7 +386,7 @@ DirectoryEntry *_fs_find_file(const char *filename) {
             break;
         }
     }
-    __cio_printf("Entry for file %s found, size = %d, block = %d\n", entry->filename, entry->size, entry->block);
+    // __cio_printf("Entry for file %s found, size = %d, block = %d\n", entry->filename, entry->size, entry->block);
 
     return entry;
 }
@@ -328,7 +410,7 @@ int _fs_open_file(const char *filename, const char *mode){
 int _fs_read_file(const char *filename) {
     // Read data from the specified file into fs.buffer
     
-    __cio_puts("READING... ");
+    // __cio_puts("READING... \n");
 
     // Search for the file in the root directory
     DirectoryEntry *entry = _fs_find_file(filename);
@@ -344,7 +426,11 @@ int _fs_read_file(const char *filename) {
       // Calculate the block number corresponding to the current cluster
       
       // Read the block from the disk image into the buffer
+      __cio_printf("reading block %d\n", current_block);
+      __delay(20);
       read_block(current_block);
+      dump_fs_buffer();
+      clear_fs_buffer();
 
       // Move buffer to the next position
       // fs.buffer += BLOCK_SIZE;
@@ -352,8 +438,8 @@ int _fs_read_file(const char *filename) {
       // Move to the next cluster in the FAT
       current_block = fs.fat->entries[current_block].next_cluster;
   }
-  __cio_printf("Read complete\n");
-  dump_fs_buffer();
+  // __cio_printf("Read complete\n");
+  // dump_fs_buffer();
   return 0; // Return -1 for now as this is a stub
 }
 
@@ -379,10 +465,12 @@ int _fs_write_file(const char *filename, const void *data) {
     while (current_block != FAT_EOC) {
         // Calculate the block number corresponding to the current cluster
         int block_number = current_block;
+        __cio_printf("writing to block number = %d\n", block_number);
+        // __delay( 200);
 
         // Write data from the buffer to the disk image
         // write_block(block_number, data_ptr); 
-        write_block(1, data_ptr); //TODO SEAN: this only works with specific block numbers
+        write_block(block_number, data_ptr); //TODO SEAN: this only works with specific block numbers
         // __cio_printf("Write block called on block #%d: ", block_number);
         // read_block(block_number);
         // __cio_printf("Read block called on block #%d: ", block_number);

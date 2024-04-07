@@ -11,6 +11,7 @@
 #define FAT_EOC 0xFFFF
 #define DISK_SIZE 1024 // disk is this many blocks
 #define BLOCK_SIZE 4096 // TODO SEAN: make this pull from somewhere
+#define TOTAL_SIZE (DISK_SIZE * BLOCK_SIZE)
 #define SECTOR_SIZE 512 // 8 sectors = 1 block
 #define ROOT_DIRECTORY_ENTRIES 32
 // #define ROOT_DIRECTORY_ENTRIES 4
