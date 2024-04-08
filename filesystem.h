@@ -9,7 +9,7 @@
 // Constants for FAT32 filesystem
 #define MAX_FAT_ENTRIES 1000
 #define FAT_EOC 0xFFFF
-#define DISK_SIZE 1024 // disk is this many blocks
+#define DISK_SIZE 16 // disk is this many blocks
 #define BLOCK_SIZE 4096 // TODO SEAN: make this pull from somewhere
 #define TOTAL_SIZE (DISK_SIZE * BLOCK_SIZE)
 #define SECTOR_SIZE 512 // 8 sectors = 1 block
@@ -27,6 +27,13 @@ typedef struct {
 	uint32_t block;                      // Starting block of the file's data
 										 // Add more fields as needed for your filesystem implementation
 } DirectoryEntry;
+
+typedef struct  {
+    char name[MAX_FILENAME_LENGTH]; // Name of the directory
+    DirectoryEntry files[ROOT_DIRECTORY_ENTRIES]; // Array of directory entries (files)
+    uint32_t num_files; // Number of files in the directory
+    // Add any other metadata or properties you need for directories
+} Directory;
 
 typedef struct {
 	uint32_t next_cluster;
@@ -78,11 +85,71 @@ typedef struct {
 	int last_error;
 } FileSystem;
 
+
+/*********DIRECTORUIES*********/
 /*
- ** Dump root directory to CIO
- ** @return 0 on success, -1 on failure.
- */
-int dump_root( void );
+** Create Directory
+** @param path Path of the directory to create.
+** @return 0 on success, -1 on failure.
+*/
+int create_dir(const char *path);
+
+/*
+** Delete Directory
+** @param path Path of the directory to delete.
+** @return 0 on success, -1 on failure.
+*/
+int delete_dir(const char *path);
+
+/*
+** Open Directory
+** @param path Path of the directory to open.
+** @return Pointer to the opened Directory structure, NULL on failure.
+*/
+Directory *open_dir(const char *path);
+
+/*
+** Close Directory
+** @param dir Pointer to the Directory structure to close.
+** @return 0 on success, -1 on failure.
+*/
+int close_dir(Directory *dir);
+
+/*
+** List Directory Contents
+** @param dir Pointer to the Directory structure.
+** @return 0 on success, -1 on failure.
+*/
+int list_dir_contents(Directory *dir);
+
+/*
+** Change Directory
+** @param path Path of the directory to change to.
+** @return 0 on success, -1 on failure.
+*/
+int change_dir(const char *path);
+
+/*
+** Get Current Directory
+** @return Path of the current directory.
+*/
+const char *get_current_dir( void );
+
+/*
+** Move or Rename Directory
+** @param old_path Current path of the directory.
+** @param new_path New path for the directory.
+** @return 0 on success, -1 on failure.
+*/
+int move_dir(const char *old_path, const char *new_path);
+
+/*
+** Check if Directory Exists
+** @param path Path of the directory to check.
+** @return 1 if directory exists, 0 if not.
+*/
+int dir_exists(const char *path);
+
 
 
 /*

@@ -13,18 +13,61 @@ static FileSystem fs;
 static unsigned char disk_image[TOTAL_SIZE];
 
 
+int create_dir(const char *path) {
+    // Implement logic to create a directory
+    return 0;
+}
+
+int delete_dir(const char *path) {
+    // Implement logic to delete a directory
+    return 0;
+}
+
+Directory *open_dir(const char *path) {
+    // Implement logic to open a directory
+    return NULL;
+}
+
+int close_dir(Directory *dir) {
+    // Implement logic to close a directory
+    return 0;
+}
+
+int list_dir_contents(Directory *dir) {
+    // Implement logic to list directory contents
+    return 0;
+}
+
+int change_dir(const char *path) {
+    // Implement logic to change directory
+    return 0;
+}
+
+const char *get_current_dir( void ) {
+    // Implement logic to get current directory
+    return NULL;
+}
+
+int move_dir(const char *old_path, const char *new_path) {
+    // Implement logic to move or rename a directory
+    return 0;
+}
+
+int dir_exists(const char *path) {
+    // Implement logic to check if directory exists
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+//////////////////////FILE SYSTEM//////////////////////////////
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+
 // Function to initialize the fs.buffer
 void init_fs_buffer( void ) {
 	fs.buffer = (char *)_km_page_alloc(1);
-}
-
-// Function to set the contents of the fs.buffer
-void set_fs_buffer(const char *data, uint32_t size) {
-	if (data == NULL || size > FS_BUFFER_SIZE) {
-		return; // Invalid input, do nothing
-	}
-	// Copy data into the fs.buffer
-	__memcpy(fs.buffer, data, size);
 }
 
 void clear_fs_buffer( void ) {
@@ -39,7 +82,7 @@ int dump_fs_buffer( void ){
 	return 0;
 }
 
-int dump_root(){
+int dump_root( void ){
 	__cio_printf("Dumping Root:\n");
 	for(int i = 0; i < ROOT_DIRECTORY_ENTRIES; i++){
 		if( __strcmp(fs.root_directory[i].filename, "") != 0 ){
