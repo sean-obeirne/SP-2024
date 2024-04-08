@@ -92,48 +92,48 @@ typedef struct {
 ** @param path Path of the directory to create.
 ** @return 0 on success, -1 on failure.
 */
-int create_dir(const char *path);
+int _fs_create_dir(const char *path);
 
 /*
 ** Delete Directory
 ** @param path Path of the directory to delete.
 ** @return 0 on success, -1 on failure.
 */
-int delete_dir(const char *path);
+int _fs_delete_dir(const char *path);
 
 /*
 ** Open Directory
 ** @param path Path of the directory to open.
 ** @return Pointer to the opened Directory structure, NULL on failure.
 */
-Directory *open_dir(const char *path);
+Directory *_fs_open_dir(const char *path);
 
 /*
 ** Close Directory
 ** @param dir Pointer to the Directory structure to close.
 ** @return 0 on success, -1 on failure.
 */
-int close_dir(Directory *dir);
+int _fs_close_dir(Directory *dir);
 
 /*
 ** List Directory Contents
 ** @param dir Pointer to the Directory structure.
 ** @return 0 on success, -1 on failure.
 */
-int list_dir_contents(Directory *dir);
+int _fs_list_dir_contents(Directory *dir);
 
 /*
 ** Change Directory
 ** @param path Path of the directory to change to.
 ** @return 0 on success, -1 on failure.
 */
-int change_dir(const char *path);
+int _fs_change_dir(const char *path);
 
 /*
 ** Get Current Directory
 ** @return Path of the current directory.
 */
-const char *get_current_dir( void );
+const char *_fs_get_current_dir( void );
 
 /*
 ** Move or Rename Directory
@@ -141,14 +141,14 @@ const char *get_current_dir( void );
 ** @param new_path New path for the directory.
 ** @return 0 on success, -1 on failure.
 */
-int move_dir(const char *old_path, const char *new_path);
+int _fs_move_dir(const char *old_path, const char *new_path);
 
 /*
 ** Check if Directory Exists
 ** @param path Path of the directory to check.
 ** @return 1 if directory exists, 0 if not.
 */
-int dir_exists(const char *path);
+int _fs_dir_exists(const char *path);
 
 /*
 ** Get Directory Metadata
@@ -156,7 +156,7 @@ int dir_exists(const char *path);
 ** @param metadata Pointer to the DirectoryMetadata structure to store metadata.
 ** @return 0 on success, -1 on failure.
 */
-// int get_directory_metadata(const char *path, DirectoryMetadata *metadata);
+// int _fs_get_directory_metadata(const char *path, DirectoryMetadata *metadata);
 
 /*
 ** Traverse Directory Tree
@@ -164,14 +164,14 @@ int dir_exists(const char *path);
 ** @param callback Pointer to the callback function to be called for each directory.
 ** @return 0 on success, -1 on failure.
 */
-int traverse_dir_tree(const char *root_path, void (*callback)(const char *path));
+int _fs_traverse_dir_tree(const char *root_path, void (*callback)(const char *path));
 
 
 /*
  ** Dump root directory to CIO
  ** @return 0 on success, -1 on failure.
  */
-int dump_root( void );
+int _fs_dump_root( void );
 
 
 /*

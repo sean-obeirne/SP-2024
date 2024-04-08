@@ -13,57 +13,57 @@ static FileSystem fs;
 static unsigned char disk_image[TOTAL_SIZE];
 
 
-int create_dir(const char *path) {
+int _fs_create_dir(const char *path) {
     // Implement logic to create a directory
     return 0;
 }
 
-int delete_dir(const char *path) {
+int _fs_delete_dir(const char *path) {
     // Implement logic to delete a directory
     return 0;
 }
 
-Directory *open_dir(const char *path) {
+Directory *_fs_open_dir(const char *path) {
     // Implement logic to open a directory
     return NULL;
 }
 
-int close_dir(Directory *dir) {
+int _fs_close_dir(Directory *dir) {
     // Implement logic to close a directory
     return 0;
 }
 
-int list_dir_contents(Directory *dir) {
+int _fs_list_dir_contents(Directory *dir) {
     // Implement logic to list directory contents
     return 0;
 }
 
-int change_dir(const char *path) {
+int _fs_change_dir(const char *path) {
     // Implement logic to change directory
     return 0;
 }
 
-const char *get_current_dir( void ) {
+const char *_fs_get_current_dir( void ) {
     // Implement logic to get current directory
     return NULL;
 }
 
-int move_dir(const char *old_path, const char *new_path) {
+int _fs_move_dir(const char *old_path, const char *new_path) {
     // Implement logic to move or rename a directory
     return 0;
 }
 
-int dir_exists(const char *path) {
+int _fs_dir_exists(const char *path) {
     // Implement logic to check if directory exists
     return 0;
 }
 
-// int get_directory_metadata(const char *path, DirectoryMetadata *metadata) {
+// int _fs_get_directory_metadata(const char *path, DirectoryMetadata *metadata) {
 //     // Implement logic to get directory metadata
 //     return 0;
 // }
 
-int traverse_directory_tree(const char *root_path, void (*callback)(const char *path)) {
+int _fs_traverse_directory_tree(const char *root_path, void (*callback)(const char *path)) {
     // Implement logic to traverse directory tree
     return 0;
 }
