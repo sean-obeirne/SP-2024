@@ -13,44 +13,6 @@ static FileSystem fs;
 static unsigned char disk_image[TOTAL_SIZE];
 
 
-int create_dir(const char *path) {
-    // Check if the path is valid
-    if (path == NULL || path[0] == '\0') {
-        return -1; // Invalid path
-    }
-
-    // Check if the directory already exists
-    if (dir_exists(path)) {
-        __cio_printf("Directory \"%s\" already exists\n", path);
-        return -1;
-    }
-
-    // Implement logic to create the directory
-    // For this stub implementation, we'll print a message indicating directory creation
-    __cio_printf("Directory \"%s\" created successfully\n", path);
-
-    return 0; // Return 0 for success
-}
-
-int delete_dir(const char *path) {
-    // Check if the path is valid
-    if (path == NULL || path[0] == '\0') {
-        return -1; // Invalid path
-    }
-
-    // Check if the directory exists
-    if (!dir_exists(path)) {
-        __cio_printf("Directory \"%s\" does not exist\n", path);
-        return -1;
-    }
-
-    // Implement logic to delete the directory
-    // For this stub implementation, we'll print a message indicating directory deletion
-    __cio_printf("Directory \"%s\" deleted successfully\n", path);
-
-    return 0; // Return 0 for success
-}
-
 Directory *open_dir(const char *path) {
     // Implement logic to open a directory
     return NULL;
@@ -61,35 +23,16 @@ int close_dir(Directory *dir) {
     return 0;
 }
 
-int list_dir_contents(Directory *dir) {
-    // Implement logic to list directory contents
-    return 0;
-}
-
-int change_dir(const char *path) {
-    // Implement logic to change directory
-    return 0;
-}
-
-const char *get_current_dir( void ) {
-    // Implement logic to get current directory
+int list_dir_contents(const char *dir_name) {
+	DirectoryEntry *entry = _fs_find_entry(dir_name);
+	__cio_printf("Contents of %s:\n", entry->filename);
+	if (entry->attributes == 1){ // file
+		_fs_print_entry(dir_name);
+	}
+	else{
+		dump_root();
+	}
     return NULL;
-}
-
-int move_dir(const char *old_path, const char *new_path) {
-    // Implement logic to move or rename a directory
-    return 0;
-}
-
-int dir_exists(const char *path) {
-    // Check if the path is valid
-    if (path == NULL || path[0] == '\0') {
-        return 0; // Invalid path, directory doesn't exist
-    }
-
-    // Implement logic to check if the directory exists
-    // For this stub implementation, let's assume all directories exist
-    return 1;
 }
 
 
@@ -383,6 +326,12 @@ int _fs_init( void ) {
 	return 0;
 }
 
+int _fs_mount( void ) {
+	// Implement FAT32 mounting logic here
+	// Mount the filesystem using the provided filesystem structure
+	return 0; // Return 0 on success
+}
+
 DirectoryEntry *_fs_find_entry(const char *filename) {
 	// Search for the file in the root directory
 	DirectoryEntry *entry = NULL;
@@ -397,13 +346,8 @@ DirectoryEntry *_fs_find_entry(const char *filename) {
 	return entry;
 }
 
-int _fs_mount( void ) {
-	// Implement FAT32 mounting logic here
-	// Mount the filesystem using the provided filesystem structure
-	return 0; // Return 0 on success
-}
-
 int _fs_create_entry(const char *filename, EntryType type){
+	__cio_puts("Creating...\n");
 	// No dplicate filenames
 	if(_fs_find_entry(filename) != NULL){
 		__cio_printf("File %s already exists\n", filename);
@@ -436,17 +380,24 @@ int _fs_create_entry(const char *filename, EntryType type){
 	// __strcpy(fs.root_directory[empty_slot_index].filename, filename);
 	// fs.root_directory[empty_slot_index].size = 0; // Set size to 0 initially
 	// fs.root_directory[empty_slot_index].block = empty_slot_index;
-	__cio_printf("DirectoryEntry %s, a %x created at block %d\n", fs.root_directory[empty_slot_index].filename, fs.root_directory[empty_slot_index].attributes, fs.root_directory[empty_slot_index].block);
+	__cio_printf("Successfully created DirectoryEntry %s, a %s created at block %d\n", fs.root_directory[empty_slot_index].filename, fs.root_directory[empty_slot_index].attributes == 1 ? "file" : "dir", fs.root_directory[empty_slot_index].block);
 	return 0;
 }
 
 int _fs_rename_entry(const char *old_filename, const char *new_filename){
-	DirectoryEntry *entry = _fs_find_entry(old_filename);
-	__memcpy(entry->filename, new_filename, MAX_FILENAME_LENGTH);
+	__cio_puts("Renaming...\n");
+	DirectoryEntry *src = _fs_find_entry(old_filename);
+	DirectoryEntry *dest = _fs_find_entry(new_filename);
+	if(dest != NULL){
+		__cio_printf("File %s already exists\n", new_filename);
+		return -1;
+	}
+	__memcpy(src->filename, new_filename, MAX_FILENAME_LENGTH);
 	return 0;
 }
 
-int _fs_delete_file(const char *filename){
+int _fs_delete_entry(const char *filename){
+	__cio_puts("Deleting...\n");
 	DirectoryEntry *entry = _fs_find_entry(filename);
 	if(entry == NULL){
 		__cio_printf("File %s does not exist", filename);
@@ -475,6 +426,7 @@ int _fs_open_file(const char *filename, const char *mode){
 }
 
 int _fs_read_file(const char *filename) {
+	__cio_puts("Reading...\n");
 	// Read data from the specified file into fs.buffer
 
 	// __cio_puts("READING... \n");
@@ -511,15 +463,18 @@ int _fs_read_file(const char *filename) {
 }
 
 int _fs_write_file(const char *filename, const void *data) {
+	__cio_puts("Writing...\n");
+
 	// Find the directory entry for the specified filename
 	DirectoryEntry *entry = _fs_find_entry(filename);
 
 	// If the file doesn't exist, return an error
 	if (entry == NULL) {
-		__cio_printf("Writing... filename %s NOT found! Creating...\n", entry);
-		__delay( 200 );
-		_fs_create_entry(entry->filename, FILE_ENTRY);
-		// return -1; // File not found
+		// __cio_printf("Filename %s NOT found! Creating...\n", entry);
+		// __delay( 200 );
+		// _fs_create_entry(entry->filename, FILE_ENTRY);
+		__cio_printf("Filename %s NOT found!\n", entry);
+		return -1;
 	}
 
 	// Retrieve the starting cluster of the file
@@ -532,7 +487,7 @@ int _fs_write_file(const char *filename, const void *data) {
 	while (current_block != FAT_EOC) {
 		// Calculate the block number corresponding to the current cluster
 		int block_number = current_block;
-		__cio_printf("writing to block number = %d\n", block_number);
+		__cio_printf("Writing to block number %d\n", block_number);
 		// __delay( 200);
 
 		// Write data from the buffer to the disk image
@@ -564,13 +519,14 @@ int _fs_close_file(const char *filename){
 	return 0;
 }
 
-int _fs_print_file(const char *filename){
+int _fs_print_entry(const char *filename){
+	__cio_puts("Printing...\n");
 	DirectoryEntry *entry = _fs_find_entry(filename);
 	if(entry == NULL){
 		__cio_printf("File \"%s\" not found\n");
 		return -1;
 	}
-	__cio_printf("This directory entry has filename %s, size %d, at block %d\n", entry->filename, entry->size, entry->block);
+	__cio_printf("This directory entry has filename %s, size %d, at block %d\nDumping buffer...\n", entry->filename, entry->size, entry->block);
 	read_block(entry->block);
 	__cio_printf("%s", fs.buffer);
 	return 0;

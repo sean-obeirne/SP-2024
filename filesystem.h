@@ -130,7 +130,7 @@ int close_dir(Directory *dir);
 ** @param dir Pointer to the Directory structure.
 ** @return 0 on success, -1 on failure.
 */
-int list_dir_contents(Directory *dir);
+int list_dir_contents(const char *dir_name);
 
 /*
 ** Change Directory
@@ -173,6 +173,13 @@ int _fs_init(void);
  ** @return 0 on success, -1 on failure.
  */
 int _fs_mount(void);
+
+/*
+ ** Find a DirectoryEntry in root.
+ ** @param filename of the file to find.
+ ** @return 0 on success, -1 on failure.
+ */
+DirectoryEntry *_fs_find_entry(const char *filename);
 
 /*
  ** Read data from a file in the filesystem.
@@ -236,7 +243,7 @@ int _fs_close_file(const char *filename);
  ** @param filename of the file to print.
  ** @return 0 on success, -1 on failure.
  */
-int _fs_print_file(const char *filename);
+int _fs_print_entry(const char *filename);
 
 /*
  ** Set the permissions of a file in the filesystem.
