@@ -58,6 +58,16 @@ int dir_exists(const char *path) {
     return 0;
 }
 
+// int get_directory_metadata(const char *path, DirectoryMetadata *metadata) {
+//     // Implement logic to get directory metadata
+//     return 0;
+// }
+
+int traverse_directory_tree(const char *root_path, void (*callback)(const char *path)) {
+    // Implement logic to traverse directory tree
+    return 0;
+}
+
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 //////////////////////FILE SYSTEM//////////////////////////////
@@ -397,8 +407,18 @@ int _fs_create_file(const char *filename){
 }
 
 int _fs_rename_file(const char *old_filename, const char *new_filename){
-	DirectoryEntry *entry = _fs_find_file(old_filename);
-	__memcpy(entry->filename, new_filename, MAX_FILENAME_LENGTH);
+	DirectoryEntry *src = _fs_find_file(old_filename);
+	if(src == NULL){
+		__cio_printf("File %s does not exist", old_filename);
+		return -1;
+	}
+
+	DirectoryEntry *dest = _fs_find_file(new_filename);
+	if(dest != NULL){
+		__cio_printf("File %s already exists", new_filename);
+		return -1;
+	}
+	__memcpy(src->filename, new_filename, MAX_FILENAME_LENGTH);
 	return 0;
 }
 

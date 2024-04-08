@@ -150,6 +150,28 @@ int move_dir(const char *old_path, const char *new_path);
 */
 int dir_exists(const char *path);
 
+/*
+** Get Directory Metadata
+** @param path Path of the directory.
+** @param metadata Pointer to the DirectoryMetadata structure to store metadata.
+** @return 0 on success, -1 on failure.
+*/
+// int get_directory_metadata(const char *path, DirectoryMetadata *metadata);
+
+/*
+** Traverse Directory Tree
+** @param root_path Root path of the directory tree to traverse.
+** @param callback Pointer to the callback function to be called for each directory.
+** @return 0 on success, -1 on failure.
+*/
+int traverse_dir_tree(const char *root_path, void (*callback)(const char *path));
+
+
+/*
+ ** Dump root directory to CIO
+ ** @return 0 on success, -1 on failure.
+ */
+int dump_root( void );
 
 
 /*
