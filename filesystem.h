@@ -20,10 +20,20 @@
 // #define ROOT_LEN 512 // how many files can be in root?
 
 
+typedef enum {
+	FILE_ENTRY,
+	DIRECTORY_ENTRY
+} EntryType;
+
+typedef enum {
+    FILE_ATTRIBUTE = 0x01,      // Attribute for files
+    DIRECTORY_ATTRIBUTE = 0x02  // Attribute for directories
+} EntryAttribute;
+
 typedef struct {
 	char filename[MAX_FILENAME_LENGTH + 1];  // Name of the file or directory
 	uint32_t size;                       // Size of the file in bytes
-	uint8_t attributes;                  // Attributes of the file (e.g., read-only, hidden, directory)
+	EntryAttribute attributes;                  // Attributes of the file (e.g., read-only, hidden, directory)
 	uint32_t block;                      // Starting block of the file's data
 										 // Add more fields as needed for your filesystem implementation
 } DirectoryEntry;
@@ -150,7 +160,7 @@ int move_dir(const char *old_path, const char *new_path);
 */
 int dir_exists(const char *path);
 
-
+/*************************************************************/
 
 /*
  ** Init the filesystem.
@@ -189,7 +199,7 @@ int _fs_write_file(const char *filename, const void *data/*, size_t size, off_t 
  ** @param filename Name of the file to create.
  ** @return 0 on success, -1 on failure.
  */
-int _fs_create_file(const char *filename);
+int _fs_create_entry(const char *filename, EntryType type);
 
 /*
  ** Delete a file from the filesystem.
@@ -204,7 +214,7 @@ int _fs_delete_file(const char *filename);
  ** @param new_filename New name for the file.
  ** @return 0 on success, -1 on failure.
  */
-int _fs_rename_file(const char *old_filename, const char *new_filename);
+int _fs_rename_entry(const char *old_filename, const char *new_filename);
 
 /*
  ** Open a file in the filesystem for reading or writing.
