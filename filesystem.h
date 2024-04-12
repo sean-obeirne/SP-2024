@@ -16,6 +16,8 @@
 #define ROOT_DIRECTORY_ENTRIES 32
 // #define ROOT_DIRECTORY_ENTRIES 4
 #define MAX_FILENAME_LENGTH 255
+#define MAX_PATH_LENGTH 1023
+#define MAX_DEPTH 16
 #define FS_BUFFER_SIZE 4096
 // #define ROOT_LEN 512 // how many files can be in root?
 
@@ -30,15 +32,17 @@ typedef enum {
     DIRECTORY_ATTRIBUTE = 0x02  // Attribute for directories
 } EntryAttribute;
 
-typedef struct {
-	char filename[MAX_FILENAME_LENGTH + 1];  // Name of the file or directory
-	uint32_t size;                       // Size of the file in bytes
-	EntryAttribute attributes;                  // Attributes of the file (e.g., read-only, hidden, directory)
-	uint32_t block;                      // Starting block of the file's data
-										 // Add more fields as needed for your filesystem implementation
+// Define DirectoryEntry structure
+typedef struct DirectoryEntry {
+    char filename[MAX_FILENAME_LENGTH + 1];   // Name of the file or directory
+    uint32_t size;                            // Size of the file in bytes
+    EntryAttribute type;                  // Attribute of the file (e.g., file or directory)
+    uint32_t block;                           // Starting block of the file's data
+    struct DirectoryEntry *next;              // Pointer to the next directory entry in the linked list
+    struct Directory *subdirectory;           // Pointer to the subdirectory (if it's a directory)
 } DirectoryEntry;
 
-typedef struct  {
+typedef struct Directory {
     char name[MAX_FILENAME_LENGTH]; // Name of the directory
     DirectoryEntry files[ROOT_DIRECTORY_ENTRIES]; // Array of directory entries (files)
     uint32_t num_files; // Number of files in the directory
@@ -159,6 +163,23 @@ int move_dir(const char *old_path, const char *new_path);
 ** @return 1 if directory exists, 0 if not.
 */
 int dir_exists(const char *path);
+
+
+/*
+** Get Directory Metadata
+** @param path Path of the directory.
+** @param metadata Pointer to the DirectoryMetadata structure to store metadata.
+** @return 0 on success, -1 on failure.
+*/
+// int get_directory_metadata(const char *path, DirectoryMetadata *metadata);
+
+/*
+** Traverse Directory Tree
+** @param root_path Root path of the directory tree to traverse.
+** @param callback Pointer to the callback function to be called for each directory.
+** @return 0 on success, -1 on failure.
+*/
+int traverse_directory_tree(const char *root_path, void (*callback)(const char *path));
 
 /*************************************************************/
 

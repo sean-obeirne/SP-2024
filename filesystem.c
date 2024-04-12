@@ -8,6 +8,7 @@
 
 // Declare global variables for FileSystem and disk
 static FileSystem fs;
+static char *cwd = "/"; // init cwd as root
 // static unsigned char disk_image[DISK_SIZE];
 // static unsigned char disk_image[BLOCK_SIZE * DISK_SIZE];
 static unsigned char disk_image[TOTAL_SIZE];
@@ -23,14 +24,25 @@ int close_dir(Directory *dir) {
     return 0;
 }
 
-int list_dir_contents(const char *dir_name) {
-	DirectoryEntry *entry = _fs_find_entry(dir_name);
+int list_dir_contents(const char *path) {
+	__cio_puts("Listing...\n");
+	DirectoryEntry *entry = _fs_find_entry(path);
+	Directory *dir = (Directory *)entry->subdirectory;
 	__cio_printf("Contents of %s:\n", entry->filename);
-	if (entry->attributes == 1){ // file
-		_fs_print_entry(dir_name);
+	if (entry->type == 1){ // file
+		__cio_printf("nevermind... %s is a file\n", entry->filename);
+		_fs_print_entry(path);
 	}
 	else{
-		dump_root();
+		// Print directory contents
+		for (uint32_t i = 0; i < dir->num_files; i++) {
+			// Print filename
+			__cio_printf("%s is a dir\n", entry->filename);
+			__cio_puts(dir->files[i].filename);
+			__cio_puts("\n");
+		}
+
+		return 0; // Success
 	}
     return NULL;
 }
@@ -224,6 +236,119 @@ void generate_large_file(int num_blocks) {
 	}
 }
 
+// Function to parse path into directory names and file name
+void parse_path(const char *path, char **dir_names, char *file_name, int *num_dirs) {
+    // Initialize file name
+    file_name[0] = '\0';
+	*num_dirs = 0;
+	__cio_printf("NUM DIRS: %d\n", *num_dirs);
+
+    // Check if path is empty or null
+    if (path == NULL || *path == '\0') {
+        return;
+    }
+
+    // Find the last occurrence of directory separator ("/" or "\")
+    const char *last_separator = NULL;
+    const char *current_char = path;
+    while (*current_char != '\0') {
+        if (*current_char == '/' || *current_char == '\\') {
+            last_separator = current_char;
+        }
+        current_char++;
+    }
+
+    // If no separator found, the path is just a filename
+    if (last_separator == NULL) {
+        while (*path != '\0') {
+            *file_name = *path;
+            file_name++;
+            path++;
+        }
+        *file_name = '\0'; // Null-terminate the file name
+        return;
+    }
+
+    // Extract directory names and file name
+    // Initialize directory count
+    int dir_count = 0;
+
+    // Copy characters before the last separator into directory names
+    const char *start_dir = path;
+    const char *end_dir = last_separator;
+    while (start_dir < end_dir) {
+        // Find the next directory separator
+        const char *next_separator = start_dir;
+        while (*next_separator != '/' && *next_separator != '\\' && *next_separator != '\0') {
+            next_separator++;
+        }
+
+        // Calculate the length of the current directory name
+        uint32_t dir_length = next_separator - start_dir;
+
+        // Allocate memory for the directory name
+		// __cio_printf("dir length: %d\n", dir_length + 1);
+        dir_names[dir_count] = (char *)_km_page_alloc((dir_length + 1));
+        if (dir_names[dir_count] == NULL) {
+            // Memory allocation failed, return
+			__cio_printf("Failed to allocate memory for directories in path %s\n", path);
+            return;
+        }
+		// Allocate memory for the directory name
+		int dir_name_length = next_separator - start_dir;  // Calculate the length of the directory name
+		char *dir_name_ptr = (char *)_km_page_alloc((dir_name_length + 1) * sizeof(char));  // Allocate memory (+1 for null terminator)
+		if (dir_name_ptr == NULL) {
+			__cio_printf("Failed to allocate memory for dir_name_ptr %s\n", *dir_name_ptr);
+			return;
+		}
+
+        // Copy characters to the directory name
+		const char *dir_ptr = start_dir;
+		char *current_dir_char = dir_name_ptr;
+		while (dir_ptr < next_separator) {
+			*current_dir_char = *dir_ptr;
+			current_dir_char++;
+			dir_ptr++;
+		}
+		*current_dir_char = '\0';  // Null-terminate the directory name
+
+		// Save the directory name pointer to the directory double pointer
+		dir_names[dir_count] = dir_name_ptr;
+		// __cio_printf("DIR NAMES: %s\n", dir_names[num_dirs]);
+
+        // Move to the next directory name
+        dir_count++;
+		*num_dirs += 1;
+        start_dir = next_separator + 1;
+    }
+
+
+    // Copy characters after the last separator into file name
+    const char *file_ptr = last_separator + 1;
+    while (*file_ptr != '\0') {
+        *file_name = *file_ptr;
+        file_name++;
+        file_ptr++;
+    }
+    *file_name = '\0'; // Null-terminate the file name
+}
+
+int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
+	if(dest == NULL || insert == NULL){
+		__cio_printf("Invalid parameters to add_sub_entry()\n");
+		return -1;
+	}
+	if(dest->type != 2){
+		// __cio_printf("%s\n", dest->subdirectory->files[0].filename);
+		__cio_printf("Adding DirectoryEntry %s to a file, %s, aborting...\n", dest->filename, insert->filename);
+		return -1;
+	}
+	__cio_puts("Adding sub entry...");
+	dest->subdirectory->files[0] = *insert;
+	dest->subdirectory->num_files += 1;
+	__cio_printf("subdir created, %s now contains %s\n", dest->filename, dest->subdirectory->files[0].filename);
+	return 0;
+}
 
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
@@ -269,7 +394,12 @@ int _fs_init( void ) {
 		//TODO SEAN: free fs.fat
 		return -1;
 	}
-	// __cio_puts("HELLOOOOO\n");
+	DirectoryEntry root_entry;
+    __strcpy(root_entry.filename, "/");
+    root_entry.size = 0;
+    root_entry.type = DIRECTORY_ATTRIBUTE;
+    root_entry.block = 0;
+	fs.root_directory[0] = root_entry;
 
 	// Current Directory Information
 	fs.current_directory_cluster = fs.root_directory_cluster;
@@ -346,9 +476,95 @@ DirectoryEntry *_fs_find_entry(const char *filename) {
 	return entry;
 }
 
+int _fs_create_entry_from_path(const char *path, EntryType type){
+	__cio_puts("Creating (from path)...\n");
+
+
+	char *dirs[MAX_PATH_LENGTH]; // Double pointer to store directory names
+	char filename[MAX_FILENAME_LENGTH + 1]; // Buffer to store file name
+	int num_dirs = 0;
+
+	parse_path(path, dirs, filename, &num_dirs);
+	// __cio_puts("PATH, DIR_NAME, FILE_NAME:\n");
+	// __cio_puts(path);
+	// __cio_puts("\n");
+	// __cio_puts(dirs[2]);
+	// __cio_puts("\n");
+	// __cio_puts(filename);
+	// __cio_puts("\n");
+
+	DirectoryEntry *parent_dir_entry = &fs.root_directory[0];
+
+	for(int i = 1; i < num_dirs; i++){
+		// Check if the directory already exists
+		DirectoryEntry *existing_dir_entry = _fs_find_entry(dirs[i]);
+
+		// If the directory doesn't exist, create it as a subdirectory under the parent directory entry
+		if (existing_dir_entry == NULL) {
+			if(_fs_create_entry(parent_dir_entry->filename, DIRECTORY_ENTRY)){
+				existing_dir_entry = _fs_find_entry(parent_dir_entry->filename);
+			}
+			__cio_printf("Ok but here is the filename: %s\n", parent_dir_entry->filename);
+			if (existing_dir_entry == NULL) {
+				// Failed to create the directory entry
+				__cio_printf("Failed to create parent dir %s\n", *existing_dir_entry);
+				return -1;
+			}
+		}
+
+		// add_sub_entry(_fs_find_entry("subdir"), _fs_find_entry("file.txt"));
+		// if (parent_dir_entry->type == 2){
+		// 	add_sub_entry(parent_dir_entry, existing_dir_entry);
+		// }
+
+		// Update the parent directory entry to the current directory entry
+		parent_dir_entry = existing_dir_entry;
+		if(_fs_find_entry(dirs[i]) != NULL)
+			continue; // directory exists
+		else{
+			_fs_create_entry(dirs[i], DIRECTORY_ENTRY);
+		}
+	}
+
+	// No duplicate filenames
+	// if(_fs_find_entry(filename) != NULL){
+	// 	__cio_printf("File %s already exists\n", filename);
+	// 	return -1;
+	// }
+
+	// Search for an empty slot in the root directory
+	int empty_slot_index = -1;
+	for (int i = 0; i < ROOT_DIRECTORY_ENTRIES; i++) {
+		if (fs.root_directory[i].filename[0] == '\0') {
+			empty_slot_index = i;
+			break;
+		}
+	}
+	// If no empty slot found, return an error
+	if (empty_slot_index == -1) {
+		__cio_puts("ROOT DIRECTORY FULL\n");
+		return -1;
+	}
+
+	// Populate the empty slot with the new entry details
+	DirectoryEntry *new_entry = &fs.root_directory[empty_slot_index];
+	__strcpy(new_entry->filename, filename);
+	new_entry->size = 0;
+	new_entry->type = (type == FILE_ENTRY) ? FILE_ATTRIBUTE : DIRECTORY_ATTRIBUTE;
+	new_entry->block = empty_slot_index; // Allocate a block for the new entry's data
+
+
+	// Populate the empty slot with the new entry details
+	// __strcpy(fs.root_directory[empty_slot_index].filename, filename);
+	// fs.root_directory[empty_slot_index].size = 0; // Set size to 0 initially
+	// fs.root_directory[empty_slot_index].block = empty_slot_index;
+	__cio_printf("Successfully created DirectoryEntry %s, a %s created at block %d\n", fs.root_directory[empty_slot_index].filename, fs.root_directory[empty_slot_index].type == 1 ? "file" : "dir", fs.root_directory[empty_slot_index].block);
+	return 0;
+}
+
 int _fs_create_entry(const char *filename, EntryType type){
 	__cio_puts("Creating...\n");
-	// No dplicate filenames
+	// No duplicate filenames
 	if(_fs_find_entry(filename) != NULL){
 		__cio_printf("File %s already exists\n", filename);
 		return -1;
@@ -372,15 +588,25 @@ int _fs_create_entry(const char *filename, EntryType type){
     DirectoryEntry *new_entry = &fs.root_directory[empty_slot_index];
     __strcpy(new_entry->filename, filename);
     new_entry->size = 0;
-    new_entry->attributes = (type == FILE_ENTRY) ? FILE_ATTRIBUTE : DIRECTORY_ATTRIBUTE;
+    new_entry->type = (type == FILE_ENTRY) ? FILE_ATTRIBUTE : DIRECTORY_ATTRIBUTE;
     new_entry->block = empty_slot_index; // Allocate a block for the new entry's data
+	if (type == DIRECTORY_ENTRY){
+		Directory *subdirectory = (Directory *)_km_page_alloc(1);
+		if (subdirectory == NULL) {
+			// Handle error if memory allocation fails
+			__cio_printf("failed to create subdirectory\n");
+			return -1;
+		}
+		new_entry->subdirectory = subdirectory;
+	}
+
 
 
 	// Populate the empty slot with the new entry details
 	// __strcpy(fs.root_directory[empty_slot_index].filename, filename);
 	// fs.root_directory[empty_slot_index].size = 0; // Set size to 0 initially
 	// fs.root_directory[empty_slot_index].block = empty_slot_index;
-	__cio_printf("Successfully created DirectoryEntry %s, a %s created at block %d\n", fs.root_directory[empty_slot_index].filename, fs.root_directory[empty_slot_index].attributes == 1 ? "file" : "dir", fs.root_directory[empty_slot_index].block);
+	__cio_printf("Successfully created DirectoryEntry %s, a %s created at block %d\n", fs.root_directory[empty_slot_index].filename, fs.root_directory[empty_slot_index].type == 1 ? "file" : "dir", fs.root_directory[empty_slot_index].block);
 	return 0;
 }
 
