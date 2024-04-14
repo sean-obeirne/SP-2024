@@ -4,12 +4,15 @@
 #include "common.h" // Include custom data types
 #include "kmem.h" // Include memory management
 
+#define RAMDISK_PAGES 16
+#define RAMDISK_SIZE (RAMDISK_PAGES * SZ_PAGE)
+
 // Define the storage interface
 typedef struct {
     int (*init)(uint32_t size);
     int (*read)(uint32_t block, void *buffer, uint32_t size);
-    int (*write)(uint32_t block, const void *data, uint32_t size);
-    int (*request_space)(uint32_t size, uint32_t *block);
+    int (*write)(const void *data, uint32_t size);
+    int (*request_space)(uint32_t size);
     int (*release_space)(uint32_t block, uint32_t size);
 } StorageInterface;
 
@@ -43,7 +46,7 @@ int ramdisk_read(uint32_t block, void *buffer, uint32_t size);
 ** @param size Number of bytes to write
 ** @return 0 on success, -1 on failure
 */
-int ramdisk_write(uint32_t block, const void *data, uint32_t size);
+int ramdisk_write(const void *data, uint32_t size);
 
 /*
 ** Function to request space on the RAM disk
@@ -51,7 +54,7 @@ int ramdisk_write(uint32_t block, const void *data, uint32_t size);
 ** @param block Pointer to store the starting block number of the allocated space
 ** @return 0 on success, -1 on failure
 */
-int ramdisk_request_space(uint32_t size, uint32_t *block);
+int ramdisk_request_space(uint32_t size);
 
 /*
 ** Function to release space on the RAM disk
