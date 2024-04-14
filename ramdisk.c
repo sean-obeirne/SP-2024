@@ -50,18 +50,20 @@ int storage_init(StorageInterface *storage, uint32_t size) {
     return 0; // Success
 }
 
+///////////////////////////////////////////////////////////////////////////////
 
-int ramdisk_init(uint32_t size) {
 
-    pool.pool_start = _km_page_alloc(size);
+int ramdisk_init(uint32_t pages) {
+
+    pool.pool_start = _km_page_alloc(pages);
 	if(pool.pool_start == NULL){
-		__cio_printf("Failed to init ramdisk pool");
+		__cio_printf("Failed to init ramdisk pool with %d pages", pages);
 		return -1;
 	}
-    pool.pool_size = size;
+    pool.pool_size = pages * SZ_PAGE;
 
     // Your implementation here
-	__cio_printf("Ramdisk memory pool initiated with %d pages\n", pool.pool_size);
+	__cio_printf("Ramdisk memory pool initiated with %d bytes\n", pool.pool_size);
     return 0;
 }
 
@@ -112,26 +114,6 @@ int ramdisk_request_space(uint32_t size, uint32_t *block) {
     // Your implementation here
     return 0;
 }
-
-
-// int ramdisk_request_space(uint32_t size, uint32_t *block) {
-//     // Check if size is valid (not exceeding available memory pool size)
-//     if (size > MAX_POOL_SIZE) {
-//         return -1; // Error: Requested size exceeds available memory pool size
-//     }
-
-//     // Allocate memory from the memory pool
-//     void *allocated_memory = memory_pool_allocate(&ramdisk_memory_pool, size);
-//     if (allocated_memory == NULL) {
-//         return -1; // Error: Failed to allocate memory from the memory pool
-//     }
-
-//     // Calculate block identifier (e.g., memory address)
-//     *block = calculate_block_identifier(allocated_memory);
-
-//     return 0; // Success
-// }
-
 
 int ramdisk_release_space(uint32_t block, uint32_t size) {
     // Your implementation here

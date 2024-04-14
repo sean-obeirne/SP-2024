@@ -25,7 +25,7 @@ void use_storage_backend(StorageInterface *storage);
 ** @param size Size of the RAM disk in bytes
 ** @return 0 on success, -1 on failure
 */
-int ramdisk_init(uint32_t size);
+int ramdisk_init(uint32_t pages);
 
 /*
 ** Function to read data from the RAM disk
