@@ -10,6 +10,7 @@ typedef struct Chunk {
 	uint32_t uid;
 	bool_t is_allocated;
 	uint32_t size;
+	uint32_t data[1];
 	struct Chunk *next;
 } Chunk;
 
@@ -67,9 +68,9 @@ int ramdisk_init(uint32_t pages) {
 	next_unique_id = 0;
 
 	pool.pool_start->uid = next_unique_id++;
-	pool.pool_start->size = 8;
+	pool.pool_start->size = 16;
 	pool.pool_start->is_allocated = true;
-	pool.pool_start->next = NULL;
+	pool.pool_start->next = (Chunk *)((char *)pool.pool_start + pool.pool_start->size + sizeof(Chunk));
 
     pool.pool_size = pages * SZ_PAGE;
 
@@ -99,6 +100,16 @@ int ramdisk_read(uint32_t block, void *buffer, uint32_t size) {
     return 0; // Success
 }
 
+int ramdisk_print( void ){
+	__cio_puts("Printing Ramdisk...\n");
+	Chunk *chunk = pool.pool_start;
+	while(chunk != NULL){
+		if(chunk->is_allocated)
+			__cio_printf("Chunk Details:\n  uid %d  size %d  is_allocated %d  next %d\n", chunk->uid, chunk->size, chunk->is_allocated, chunk->next);
+		chunk = chunk->next;
+	}
+	return 0;
+}
 
 Chunk *get_free_chunk(uint32_t size) {
     __cio_puts("Finding free chunk...\n");
@@ -106,45 +117,23 @@ Chunk *get_free_chunk(uint32_t size) {
     Chunk *chunk = pool.pool_start;
     Chunk *prev_chunk = NULL;
 
-	while (chunk->is_allocated){
-        chunk->next = (Chunk *)((char *)chunk + chunk->size + sizeof(Chunk));  // Move to the next chunk
-		prev_chunk = chunk;
-        __cio_printf("Chunk Details:\n  uid %d  size %d  is_allocated %d  next %d\n", chunk->uid, chunk->size, chunk->is_allocated, chunk->next);
+	while (chunk != NULL) {
+		chunk->next = (Chunk *)((char *)chunk + chunk->size + sizeof(Chunk));
+		
+        if (!chunk->is_allocated) {
+            return chunk;
+        }
+        prev_chunk = chunk;
         chunk = chunk->next;
-        __cio_printf("Next Chunk Details:\n  uid %d  size %d  is_allocated %d  next %d\n", chunk->uid, chunk->size, chunk->is_allocated, chunk->next);
-        // __cio_printf("Next Chunk Details:\n  size %d\n  is_allocated %d\n  next %d\n", chunk->size, chunk->is_allocated, chunk->next);
-	}
-	if (chunk == NULL){
-		__cio_printf("THIS CHUNK IS NULL\n");
-	}
-	if (chunk->is_allocated){
-		__cio_printf("THIS CHUNK IS ALLOCATED\n");
-	}
-	if (chunk->size != 0){
-		__cio_printf("THIS CHUNK SIZE IS NOT 0\n");
-	}
-	if (chunk != NULL && !chunk->is_allocated && chunk->size == 0){
-    	chunk->uid = next_unique_id++;
-		chunk->size = size;
-		chunk->is_allocated = true;
-		chunk->next = NULL;
-		// __cio_printf("FOUND FREE BLOCK!!!\n");
-        // __cio_printf("New Chunk Details:\n  size %d\n  is_allocated %d\n  next %d\n", chunk->size, chunk->is_allocated, chunk->next);
-		return chunk;
-	}
+    }
 
-    // if (chunk == NULL) {
-    //     __cio_puts("Memory pool full!\n");
-    //     return NULL;  // Memory pool is full
-    // }
-
-    // No free chunk of sufficient size found
+    // No free chunk found
     __cio_puts("No free chunk of sufficient size found\n");
     return NULL;
 }
 
+
 int ramdisk_write(const void *data, uint32_t size) {
-    // Check if the memory pool pointer is valid
 	__cio_printf("Ramdisk Writing...\n");
     if (pool.pool_start == NULL) {
 		__cio_printf("Error with pool.\n");
@@ -153,41 +142,30 @@ int ramdisk_write(const void *data, uint32_t size) {
 
     // Check if the byte count is within the bounds of the memory pool
     if (size >= pool.pool_size) {
-		// __cio_printf("Data %s exceeds pool_size.\n", (char *)data);
 		__cio_printf("Data size %d exceeds pool size %d.\n", size, pool.pool_size);
-        return -1; // Invalid block number
+        return -1;
     }
 
 	if (sizeof(*data) > 1){
-		__cio_printf("\n");
-		__cio_printf(">1BYTE CONDITION has been dealt with\n");
-		__cio_printf("\n");
-		__cio_printf("\n");
-		__cio_printf("\n");
+		__cio_printf(">1BYTE CONDITION has been triggered\n");
 	}
 
-	// __cio_printf("Data *: %s\n", (char *) data);
-	// __cio_printf("sizeof() data elements: %d\n", sizeof(*data));
-	// __cio_printf("Number of elements in data : %d\n", size);
-	__cio_printf("\n");
-
-
-    // Calculate the starting address of the block within the memory pool
-    // void *block_address = (char*)pool.pool_start;
     Chunk *chunk_address = get_free_chunk(size);
-
 	if (chunk_address == NULL) {
         __cio_printf("Error: No free chunk found.\n");
         return -1;
     }
+	chunk_address->uid = next_unique_id++;
+	chunk_address->size = size;
+	chunk_address->is_allocated = true;
 
-	__cio_printf("New chunk id: %d\n", chunk_address->uid);
-
-    // Copy data to the block
-    __memcpy(chunk_address, data, size);
+	__memcpy(chunk_address->data, data, size);
 
     __cio_printf("Chunk address: %d\n", (void *)chunk_address);
     __cio_printf("Chunk data: %s\n", (char *)chunk_address);
+
+	ramdisk_print();
+
     return 0;
 }
 
