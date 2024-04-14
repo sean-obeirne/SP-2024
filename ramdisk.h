@@ -10,7 +10,7 @@
 // Define the storage interface
 typedef struct {
     int (*init)(uint32_t size);
-    int (*read)(uint32_t block, void *buffer, uint32_t size);
+    int (*read)(const int uid, void *buffer, uint32_t size);
     int (*write)(const void *data, uint32_t size);
     int (*request_space)(uint32_t size);
     int (*release_space)(uint32_t block, uint32_t size);
@@ -37,7 +37,7 @@ int ramdisk_init(uint32_t pages);
 ** @param size Number of bytes to read
 ** @return 0 on success, -1 on failure
 */
-int ramdisk_read(uint32_t block, void *buffer, uint32_t size);
+int ramdisk_read(const int uid, void *buffer, uint32_t size);
 
 /*
 ** Function to write data to the RAM disk
