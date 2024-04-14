@@ -33,14 +33,6 @@ int storage_init(StorageInterface *storage, uint32_t size) {
         return -1; // Invalid argument
     }
 
-    // Initialize RAM disk with size 16
-	// MemoryPool *pool = (MemoryPool *) _km_page_alloc(1);
-    // int result = ramdisk_init(pool, size);
-    // if (result != 0) {
-	// 	__cio_printf("Error initializing ramdisk\n");
-    //     return result; // Error initializing RAM disk
-    // }
-
 	// Storage interface for RAM disk
 	static StorageInterface ramdisk_interface = {
 		.init = ramdisk_init,
@@ -116,19 +108,6 @@ int ramdisk_read(const int uid, void *buffer, uint32_t size) {
     return 0; // Success
 }
 
-int ramdisk_print( void ){
-	__cio_puts("Printing Ramdisk...\n");
-	Chunk *chunk = pool.pool_start;
-	while(chunk != NULL){
-		if(chunk->is_allocated){
-			__cio_printf("Chunk Details:\n  uid %d  size %d  is_allocated %d  next %d\n", chunk->uid, chunk->size, chunk->is_allocated, chunk->next);
-		}
-		chunk = chunk->next;
-	}
-	return 0;
-}
-
-
 Chunk *get_free_chunk(uint32_t size) {
     __cio_puts("Finding free chunk...\n");
 
@@ -178,20 +157,63 @@ int ramdisk_write(const void *data, uint32_t size) {
 
 	__memcpy(chunk_address->data, data, size);
 
-    __cio_printf("Chunk address: %d\n", (void *)chunk_address);
-    __cio_printf("Chunk data: %s\n", (char *)chunk_address);
-
-	ramdisk_print();
-
     return 0;
 }
 
 int ramdisk_request_space(uint32_t size) {
+	__cio_puts("Requesting space...\n");
+	// Check if the memory pool pointer is valid
+    if (pool.pool_start == NULL) {
+        return -1; // Invalid memory pool
+    }
 
-    return 0;
+    // Iterate through the memory pool to find a suitable free chunk
+    Chunk *chunk = get_free_chunk(size);
+    if (chunk == NULL) {
+        // No free chunk of sufficient size found
+        return -1;
+    }
+
+    // Mark the chunk as allocated and update its size
+    chunk->is_allocated = true;
+    chunk->size = size;
+
+    return 0; // Success
 }
 
-int ramdisk_release_space(uint32_t block, uint32_t size) {
-    // Your implementation here
-    return 0;
+int ramdisk_release_space(const int uid) {
+    // Check if the memory pool pointer is valid
+    if (pool.pool_start == NULL) {
+		__cio_printf("Error with pool.\n");
+        return -1; // Invalid memory pool
+    }
+
+	// Iterate through the memory pool to find the chunk with the specified UID
+    Chunk *chunk = pool.pool_start;
+    while (chunk != NULL) {
+        if (chunk->uid == uid) {
+            // Found the chunk with the specified UID
+            // Mark it as deallocated
+            chunk->is_allocated = false;
+            return 0; // Success
+        }
+        chunk = chunk->next;
+    }
+
+    // Chunk with the specified UID not found
+	__cio_printf("Could not find chunk with UID %d\n", uid);
+    return -1;
+}
+
+void ramdisk_print( void ){
+	__cio_puts("Printing Ramdisk...\n");
+	Chunk *chunk = pool.pool_start;
+	while(chunk != NULL){
+		__cio_printf("Chunk Details:\n  uid %d  size %d  is_allocated %d  next %d\n", chunk->uid, chunk->size, chunk->is_allocated, chunk->next);
+		// if(chunk->is_allocated){
+		// 	__cio_printf("Chunk Details:\n  uid %d  size %d  is_allocated %d  next %d\n", chunk->uid, chunk->size, chunk->is_allocated, chunk->next);
+		// }
+		chunk = chunk->next;
+	}
+	__cio_puts("Ramdisk printed.\n");
 }

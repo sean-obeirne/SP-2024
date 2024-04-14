@@ -13,7 +13,7 @@ typedef struct {
     int (*read)(const int uid, void *buffer, uint32_t size);
     int (*write)(const void *data, uint32_t size);
     int (*request_space)(uint32_t size);
-    int (*release_space)(uint32_t block, uint32_t size);
+    int (*release_space)(const int uid);
 } StorageInterface;
 
 // Function to initialize the storage backend
@@ -62,7 +62,12 @@ int ramdisk_request_space(uint32_t size);
 ** @param size Number of bytes to release
 ** @return 0 on success, -1 on failure
 */
-int ramdisk_release_space(uint32_t block, uint32_t size);
+int ramdisk_release_space(const int uid);
+
+/*
+** Function to print entir RAM disk
+*/
+void ramdisk_print( void );
 
 // Additional functions as needed...
 
