@@ -9,7 +9,7 @@
 
 // Define the storage interface
 typedef struct {
-    int (*init)(uint32_t size);
+    int (*init)(uint32_t pages);
     int (*read)(const int uid, void *buffer, uint32_t size);
     int (*write)(const void *data, uint32_t size);
     int (*request_space)(uint32_t size);
@@ -17,7 +17,7 @@ typedef struct {
 } StorageInterface;
 
 // Function to initialize the storage backend
-int storage_init(StorageInterface *storage, uint32_t size);
+int storage_init(StorageInterface *storage, uint32_t pages);
 
 // Function to switch storage backend
 void use_storage_backend(StorageInterface *storage);

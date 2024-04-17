@@ -4,6 +4,7 @@
 #include "lib.h" // Include helpful libraries
 #include "cio.h" // Include console output
 #include "kmem.h" // Include memory management
+#include "ramdisk.h" // Include memory management
 
 
 // Declare global variables for FileSystem and disk
@@ -350,11 +351,11 @@ int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
 	return 0;
 }
 
-///////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////
-//////////////////////FILE SYSTEM//////////////////////////////
-///////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+//////////////////////FILE SYSTEM//////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
 /* FILESYSTEM OPERATIONS */
 int _fs_init( void ) {
@@ -415,10 +416,18 @@ int _fs_init( void ) {
 	}
 	fs.file_system_type[8] = '\0';
 
-	// i have to find the device entry point
-	// Disk Information
-	// fs.disk = disk;
-	fs.disk = NULL;
+	// Initialize storage interface with RAM disk backend
+    StorageInterface disk;
+    int result = storage_init(&disk, DISK_SIZE);
+    if (result != 0) {
+        __cio_printf("Error initializing storage\n");
+        return -1;
+    }
+	fs.disk = disk;
+	__cio_printf("This is a new thing: \n");
+	__delay(100);
+	disk.write("This is a new thing", 5);
+	__delay(100);
 
 	// Cache or Buffer
 	init_fs_buffer();

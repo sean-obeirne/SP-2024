@@ -26,7 +26,7 @@ static MemoryPool pool = {0};
 static uint32_t next_unique_id = 0;
 
 // Function to initialize the storage backend
-int storage_init(StorageInterface *storage, uint32_t size) {
+int storage_init(StorageInterface *storage, uint32_t pages) {
     // Check if storage pointer is valid
     if (storage == NULL) {
         return -1; // Invalid argument
@@ -40,6 +40,12 @@ int storage_init(StorageInterface *storage, uint32_t size) {
 		.request_space = ramdisk_request_space,
 		.release_space = ramdisk_release_space
 	};
+
+	// Initialize RAM disk
+    int result = ramdisk_init(pages);
+    if (result != 0) {
+        return result; // Error initializing RAM disk
+    }
 
     // Assign RAM disk storage interface to the provided storage pointer
     *storage = ramdisk_interface;
@@ -144,7 +150,7 @@ int ramdisk_write(const void *data, uint32_t size) {
     }
 
 	if (sizeof(*data) > 1){
-		__cio_printf(">1BYTE CONDITION has been triggered\n");
+		__cio_printf("=============>1BYTE CONDITION has been triggered\n");
 	}
 
     Chunk *chunk_address = get_free_chunk(size);

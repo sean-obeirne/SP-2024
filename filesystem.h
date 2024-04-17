@@ -3,6 +3,7 @@
 
 // #include <stdint.h> // Include necessary standard headers
 #include "common.h"
+#include "ramdisk.h"
 
 // Define constants, macros, and data structures specific to FAT32 filesystem
 
@@ -87,7 +88,7 @@ typedef struct {
 	char file_system_type[8];
 
 	// Disk Information
-	void *disk;
+	StorageInterface disk;
 
 	// Cache or Buffer
 	void *buffer;
