@@ -44,7 +44,7 @@ int ramdisk_read(const int uid, void *buffer, uint32_t size);
 ** @param block Starting block number to write to
 ** @param data Pointer to the data to write
 ** @param size Number of bytes to write
-** @return 0 on success, -1 on failure
+** @return chunk UID on success, -1 on failure
 */
 int ramdisk_write(const void *data, uint32_t size);
 
@@ -52,7 +52,7 @@ int ramdisk_write(const void *data, uint32_t size);
 ** Function to request space on the RAM disk
 ** @param size Number of bytes to allocate
 ** @param block Pointer to store the starting block number of the allocated space
-** @return 0 on success, -1 on failure
+** @return chunk UID on success, -1 on failure
 */
 int ramdisk_request_space(uint32_t size);
 
@@ -65,7 +65,7 @@ int ramdisk_request_space(uint32_t size);
 int ramdisk_release_space(const int uid);
 
 /*
-** Function to print entir RAM disk
+** Function to print entire RAM disk
 */
 void ramdisk_print( void );
 

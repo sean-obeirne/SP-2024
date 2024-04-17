@@ -75,7 +75,6 @@ Chunk *get_chunk(const int uid){
 	Chunk *chunk = pool.pool_start;
 
 	while (chunk != NULL) {
-		// chunk->next = (Chunk *)((char *)chunk + chunk->size + sizeof(Chunk));
         if (uid == chunk->uid) {
             return chunk;
         }
@@ -99,17 +98,13 @@ int ramdisk_read(const int uid, void *buffer, uint32_t size) {
     // Calculate the starting address of the block within the memory pool
 	Chunk *chunk = get_chunk(uid);
 
-	// Check if the byte count is within the bounds of the chunk size
-    if (size > chunk->size) {
-		// __cio_printf("Size requested bigger than chunk size\n");
-        // return -1; // Invalid size
-    }
+	// Check if chunk can fit in buffer
 	if (chunk->size > size){
 		__cio_printf("Chunk size (%d) too big for full read into buffer size (%d)\n", chunk->size, size);
-        return -1; // Buffer
+        return -1; // Buffer too small
 	}
 
-    // Copy data from the block to the buffer
+    // Copy data from the chunk to the buffer
 	__memcpy(buffer, (void *)(chunk + 1), size);
 
     return 0; // Success
@@ -119,7 +114,6 @@ Chunk *get_free_chunk(uint32_t size) {
     __cio_puts("Finding free chunk...\n");
 
     Chunk *chunk = pool.pool_start;
-    // Chunk *prev_chunk = NULL;
 
 	while (chunk != NULL) {
 		chunk->next = (Chunk *)((char *)chunk + chunk->size + sizeof(Chunk));
@@ -129,11 +123,9 @@ Chunk *get_free_chunk(uint32_t size) {
             	return chunk;
 			}
         }
-        // prev_chunk = chunk;
         chunk = chunk->next;
     }
 
-    // No free chunk found
     __cio_puts("No free chunk of sufficient size found\n");
     return NULL;
 }
@@ -162,14 +154,16 @@ int ramdisk_write(const void *data, uint32_t size) {
     }
 	chunk_address->uid = next_unique_id++;
 	chunk_address->is_allocated = true;
-	chunk_address->size = size;
+	if(chunk_address->size == 0){ // only resize new blocks, TODO SEAN
+		chunk_address->size = size;
+	}
 
 	// __memset((void *)(chunk_address + 1), "s", size);
 	__memcpy((void *)(chunk_address + 1), data, size);
-	__cio_printf("Debugging: %d\n", sizeof(Chunk));
-	__cio_printf("Debugging: %s or %d\n", (char *)(chunk_address), chunk_address-1);
-	__cio_printf("Debugging: %s or %d\n", (char *)(chunk_address), chunk_address);
-	__cio_printf("Debugging: %s or %d\n", (char *)(chunk_address), chunk_address+1);
+	// __cio_printf("Debugging: %d\n", sizeof(Chunk));
+	// __cio_printf("Debugging: %s or %d\n", (char *)(chunk_address), chunk_address-1);
+	// __cio_printf("Debugging: %s or %d\n", (char *)(chunk_address), chunk_address);
+	// __cio_printf("Debugging: %s or %d\n", (char *)(chunk_address), chunk_address+1);
 
     return chunk_address->uid;
 }
