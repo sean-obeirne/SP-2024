@@ -66,6 +66,7 @@ void clear_fs_buffer( void ) {
 
 int dump_fs_buffer( void ){
 	__cio_printf("Dumping Buffer:\n");
+	__delay(20);
 	__cio_printf("%s\n", (char *)fs.buffer);
 	__delay(20);
 	return 0;
@@ -81,6 +82,15 @@ int dump_root( void ){
 	}
 	__delay( 100 );
 	return 0;
+}
+
+void dump_fat() {
+    // Iterate over each entry in the FAT table
+    for (int i = 0; i < MAX_FAT_ENTRIES; i++) {
+        // Print the details of each FAT entry
+        __cio_printf("FAT Entry %d: Next Cluster = %d, Status = %d\n", i, fs.fat->entries[i].next_cluster, fs.fat->entries[i].status);
+		__delay(5);
+    }
 }
 
 char *dump_disk_image_block( int block_number ){
@@ -144,13 +154,13 @@ char *dump_disk_image( void ){
 	// __cio_printf("Accumulated string: %s\n", finished_string);
 	// __cio_printf("Number of failed reads: %d\n", num_fail);
 	return finished_string;
-	/*
+	
 	// __cio_puts("Dumping Disk Image...\n");
 	// __cio_printf("%s\n", disk_image);
 	for(int i = 0; i < TOTAL_SIZE; i++){
-	dump_disk_image_block(i);
+		dump_disk_image_block(i);
 	}
-	return 0;*/
+	return 0;
 }
 
 void wipe_disk( void ){
@@ -351,6 +361,26 @@ int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
 	return 0;
 }
 
+int add_fat_entry(uint32_t next_cluster) {
+    for (int i = 0; i < MAX_FAT_ENTRIES; i++) {
+        // Check if the current entry is free
+        if (fs.fat->entries[i].status == FAT_FREE) {
+            // Set the next_cluster field to the provided value
+            fs.fat->entries[i].next_cluster = next_cluster;
+            
+            // Update the status field to indicate that the entry is in use
+            fs.fat->entries[i].status = FAT_IN_USE;
+            
+            // Return the index of the added entry
+            return i;
+        }
+    }
+    
+    // No free entry found
+    return -1;
+}
+
+
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 //////////////////////FILE SYSTEM//////////////////////////
@@ -367,24 +397,44 @@ int _fs_init( void ) {
 	fs.bytes_per_sector = SECTOR_SIZE;
 	fs.sectors_per_cluster = 8;
 	fs.reserved_sector_count = 1;
-	fs.number_of_fats = 2;
+	fs.number_of_fats = 1;
 	fs.total_sectors = 2880;
 	fs.fat_size_sectors = 16; // fat size in sectors
 	fs.root_directory_cluster = 2; // root is at cluster _
 				       //Q? do clusters=blocks=pages? and do sectors=segments?
 
-				       // FAT Information
-	fs.fat = (FAT*)_km_page_alloc( fs.fat_size_sectors * SECTOR_SIZE );
-	// __cio_printf("THIS VALUE: %d IS IT", fs.fat_size_sectors / fs.sectors_per_cluster);
-	if( fs.fat == NULL ){
-		return -1;
-	}
-	fs.fat_entry_size = 4;
+	// Initialize storage interface with RAM disk backend
+    StorageInterface disk;
+    int result = storage_init(&disk, DISK_SIZE);
+    if (result < 0) {
+        __cio_printf("Error initializing storage\n");
+        return -1;
+    }
+	fs.disk = disk;
 
-	// Set all FAT entries to FAT_EOC
+	// Request free space on the RAM disk for the FAT
+    fs.fat = (FAT *)disk.request_space(fs.fat_size_sectors * fs.bytes_per_sector);
+    if (fs.fat < 0) {
+        __cio_printf("Error requesting free space for FAT\n");
+        return -1;
+    }
+
+	// Initialize FAT
 	for (int i = 0; i < MAX_FAT_ENTRIES; i++) {
-		fs.fat->entries[i].next_cluster = FAT_EOC;
-	}
+        // Set the next_cluster field to FAT_EOC to mark the cluster as end-of-chain
+        fs.fat->entries[i].next_cluster = FAT_EOC;
+        // Set the status field to indicate that the cluster is free
+        fs.fat->entries[i].status = FAT_FREE;
+    }
+
+	// dump_fat();
+	add_fat_entry(69);
+	dump_fat();
+
+	// __cio_printf("EXPECTED: fs.fat: %d to %d\n", fs.fat, fs.fat + 8192);
+	__cio_printf("fs.fat: %d to %d\n", (int)fs.fat, (int)((char*)fs.fat + (fs.fat_size_sectors * fs.bytes_per_sector)));
+	__delay(100);
+	fs.fat_entry_size = 4;
 
 	// Root Directory Information
 	fs.root_directory_entries = 32;
@@ -415,19 +465,6 @@ int _fs_init( void ) {
 		fs.file_system_type[i] = "FAT32"[i];
 	}
 	fs.file_system_type[8] = '\0';
-
-	// Initialize storage interface with RAM disk backend
-    StorageInterface disk;
-    int result = storage_init(&disk, DISK_SIZE);
-    if (result != 0) {
-        __cio_printf("Error initializing storage\n");
-        return -1;
-    }
-	fs.disk = disk;
-	__cio_printf("This is a new thing: \n");
-	__delay(100);
-	disk.write("This is a new thing", 5);
-	__delay(100);
 
 	// Cache or Buffer
 	init_fs_buffer();

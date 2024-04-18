@@ -8,8 +8,10 @@
 // Define constants, macros, and data structures specific to FAT32 filesystem
 
 // Constants for FAT32 filesystem
-#define MAX_FAT_ENTRIES 1000
+#define MAX_FAT_ENTRIES 20
 #define FAT_EOC 0xFFFF
+#define FAT_FREE 0x0
+#define FAT_IN_USE 0x1
 #define DISK_SIZE 16 // disk is this many blocks
 #define BLOCK_SIZE 4096 // TODO SEAN: make this pull from somewhere
 #define TOTAL_SIZE (DISK_SIZE * BLOCK_SIZE)
