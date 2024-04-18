@@ -12,7 +12,7 @@ typedef struct {
     int (*init)(uint32_t pages);
     int (*read)(const int uid, void *buffer, uint32_t size);
     int (*write)(const void *data, uint32_t size);
-    int (*request_space)(uint32_t size);
+    void *(*request_space)(uint32_t size);
     int (*release_space)(const int uid);
 } StorageInterface;
 
@@ -54,7 +54,7 @@ int ramdisk_write(const void *data, uint32_t size);
 ** @param block Pointer to store the starting block number of the allocated space
 ** @return chunk UID on success, -1 on failure
 */
-int ramdisk_request_space(uint32_t size);
+void *ramdisk_request_space(uint32_t size);
 
 /*
 ** Function to release space on the RAM disk

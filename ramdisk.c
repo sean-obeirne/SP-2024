@@ -174,7 +174,7 @@ int ramdisk_write(const void *data, uint32_t size) {
     return chunk_address->uid;
 }
 
-int ramdisk_request_space(uint32_t size) {
+void *ramdisk_request_space(uint32_t size) {
 	__cio_puts("Requesting space...\n");
 	// Check if the memory pool pointer is valid
     if (pool.pool_start == NULL) {
@@ -191,9 +191,11 @@ int ramdisk_request_space(uint32_t size) {
     // Mark the chunk as allocated and update its size
 	chunk->uid = next_unique_id++;
     chunk->is_allocated = true;
-    chunk->size = size;
+	if(chunk->size == 0){ //TODO SEAN
+    	chunk->size = size;
+	}
 
-    return chunk->uid; // Success
+    return chunk+1; // Success
 }
 
 int ramdisk_release_space(const int uid) {
