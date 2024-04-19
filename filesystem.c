@@ -276,8 +276,8 @@ void strip_path(const char *path, char *final_element){
 	file_name[file_name_i] = '\0';
 	strcpy(final_element, file_name);
 }
-/*
-void parse_path(const char *path, char **dir_names, char *file_name, int *num_dirs) {
+
+void old_parse_path(const char *path, char **dir_names, char *file_name, int *num_dirs) {
 	// Initialize file name
     file_name[0] = '\0';
 	*num_dirs = 0;
@@ -312,7 +312,7 @@ void parse_path(const char *path, char **dir_names, char *file_name, int *num_di
 	}
 	scratch_path[path_i] = '\0';
 }
-*/
+
 void parse_path(const char *path, DeconstructedPath *dp) {
     // Initialize file name
     dp->file_name[0] = '\0';
@@ -366,44 +366,7 @@ void parse_path(const char *path, DeconstructedPath *dp) {
     // Copy the file name into dp->file_name
     __strcpy(dp->file_name, file_name);
 }
-/*
-void parse_path(const char *path, DeconstructedPath *dp) {
-    // Initialize file name
-    dp->file_name[0] = '\0';
-    dp->num_dirs = 0;
-	__strcpy(dp->path,path);
-	// dp->path = path;
 
-    // Check if path is empty or null
-    if (path == NULL || *path == '\0') {
-        return;
-    }
-
-    // Other local variables
-    char scratch_path[MAX_FILENAME_LENGTH];
-    int path_i = 0;
-    int dir_names_i = 0;
-    int file_name_i = 0;
-
-    // Loop through the path string
-    while (path[path_i] != '\0') {
-        if (path[path_i] == '/' && path_i != 0) {
-            scratch_path[path_i] = '\0';
-            __strcpy(dp->paths[dir_names_i], scratch_path);
-            dp->num_dirs += 1;
-            dir_names_i++;
-            dp->file_name[0] = '\0';
-            file_name_i = 0;
-        } else {
-            dp->file_name[file_name_i] = path[path_i];
-            file_name_i++;
-        }
-        scratch_path[path_i] = path[path_i];
-        path_i++;
-    }
-    scratch_path[path_i] = '\0';
-}
-*/
 int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
 	if(dest == NULL || insert == NULL){
 		__cio_printf("Invalid parameters to add_sub_entry()\n");
