@@ -39,8 +39,8 @@ typedef enum {
 typedef struct DirectoryEntry {
     char filename[MAX_FILENAME_LENGTH + 1];   // Name of the file or directory
     uint32_t size;                            // Size of the file in bytes
-    EntryAttribute type;                  // Attribute of the file (e.g., file or directory)
-    uint32_t block;                           // Starting block of the file's data
+    EntryAttribute type;                      // Attribute of the file (e.g., file or directory)
+    uint32_t cluster;                         // Starting cluster of the file's data
     struct DirectoryEntry *next;              // Pointer to the next directory entry in the linked list
     struct Directory *subdirectory;           // Pointer to the subdirectory (if it's a directory)
 } DirectoryEntry;
@@ -199,7 +199,7 @@ int _fs_init(void);
 int _fs_mount(void);
 
 /*
- ** Find a DirectoryEntry in root.
+ ** Find a DirectoryEntry from root.
  ** @param filename of the file to find.
  ** @return 0 on success, -1 on failure.
  */

@@ -117,7 +117,7 @@ int ramdisk_read(const int uid, void *buffer, uint32_t size) {
 }
 
 Chunk *get_free_chunk(uint32_t size) {
-    __cio_puts("Finding free chunk...\n");
+    // __cio_puts("Finding free chunk...\n");
 
     Chunk *chunk = pool.pool_start;
 
@@ -137,7 +137,7 @@ Chunk *get_free_chunk(uint32_t size) {
 }
 
 int ramdisk_write(const void *data, uint32_t size) {
-	__cio_printf("Ramdisk Writing...\n");
+	// __cio_printf("Ramdisk Writing...\n");
     if (pool.pool_start == NULL) {
 		__cio_printf("Error with pool.\n");
         return -1; // Invalid memory pool
@@ -175,17 +175,17 @@ int ramdisk_write(const void *data, uint32_t size) {
 }
 
 void *ramdisk_request_space(uint32_t size) {
-	__cio_puts("Requesting space...\n");
+	// __cio_puts("Requesting space...\n");
 	// Check if the memory pool pointer is valid
     if (pool.pool_start == NULL) {
-        return -1; // Invalid memory pool
+        return (void *)-1; // Invalid memory pool
     }
 
     // Iterate through the memory pool to find a suitable free chunk
     Chunk *chunk = get_free_chunk(size);
     if (chunk == NULL) {
         // No free chunk of sufficient size found
-        return -1;
+        return (void *)-1;
     }
 
     // Mark the chunk as allocated and update its size
