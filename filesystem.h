@@ -53,6 +53,14 @@ typedef struct Directory {
 } Directory;
 
 typedef struct {
+	char path[MAX_PATH_LENGTH];
+    char *paths[MAX_FILENAME_LENGTH];  // Array to store directory names
+    char *dirs[MAX_FILENAME_LENGTH];  // Array to store directory names
+    char file_name[MAX_FILENAME_LENGTH];  // String to store file name
+    int num_dirs;  // Number of directory names
+} DeconstructedPath;
+
+typedef struct {
 	uint32_t next_cluster;
 	uint8_t status;
 } FATEntry;
