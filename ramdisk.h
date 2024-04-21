@@ -9,12 +9,12 @@
 #define RAMDISK_SIZE (RAMDISK_PAGES * SZ_PAGE)
 
 // Print general debugging info, such as current operation or success status
-///////////////
-#define DEBUG
-///////////////
+////////////////
+// #define DEBUG
+////////////////
 #define DEBUG_DELAY 25
 
-// Define the storage interface
+// Define the storage interface functions for portability
 typedef struct {
     int (*init)(uint32_t pages);
     int (*read)(const int uid, void *buffer, uint32_t size);
@@ -23,12 +23,16 @@ typedef struct {
     int (*release_space)(const int uid);
 } StorageInterface;
 
-// Function to initialize the storage backend
+/*
+** Function to initialize the storage interface as a disk implementation.
+**
+** Initializes the storage interface structure with function 
+** pointers to the RAM disk functions.
+**
+** @param storage Pointer to the structure to be initialized.
+** @return 0 on success, -1 on failure.
+*/
 int storage_init(StorageInterface *storage);
-
-// Function to switch storage backend
-void use_storage_backend(StorageInterface *storage);
-
 
 /*
 ** Function to initialize the RAM disk
@@ -75,7 +79,5 @@ int ramdisk_release_space(const int uid);
 ** Function to print entire RAM disk
 */
 void ramdisk_print( void );
-
-// Additional functions as needed...
 
 #endif /* RAMDISK_H */

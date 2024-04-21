@@ -1,8 +1,8 @@
 #include "ramdisk.h"
-#include "support.h" // Include delay function
+#include "support.h"
 #include "kmem.h"
-#include "lib.h" // Include helpful libraries
-#include "cio.h" // Include console output
+#include "lib.h"
+#include "cio.h"
 
 // TODO SEAN: Could make each block its own allocation unit
 //	loop through blocks unil one has enough space
@@ -14,7 +14,6 @@ typedef struct Chunk {
 	struct Chunk *next;
 } Chunk;
 
-// Define memory pool structure
 typedef struct MemoryPool {
     struct Chunk *pool_start;
     uint32_t pool_size;
@@ -23,7 +22,7 @@ typedef struct MemoryPool {
 
 
 static MemoryPool pool = {0}; // initialize as NULL
-static uint32_t next_unique_id = 0; // incremented value
+static uint32_t next_unique_id = 0; // incrementable value
 
 
 
@@ -79,7 +78,6 @@ int ramdisk_init(uint32_t pages) {
 
     pool.pool_size = pages * SZ_PAGE;
 
-	// __cio_printf("Ramdisk memory pool initialized with %d bytes\n", pool.pool_size);
     return 0;
 }
 
@@ -181,12 +179,7 @@ int ramdisk_write(const void *data, uint32_t size) {
 		chunk_address->size = size;
 	}
 
-	// __memset((void *)(chunk_address + 1), "s", size);
 	__memcpy((void *)(chunk_address + 1), data, size);
-	// __cio_printf("Debugging: %d\n", sizeof(Chunk));
-	// __cio_printf("Debugging: %s or %d\n", (char *)(chunk_address), chunk_address-1);
-	// __cio_printf("Debugging: %s or %d\n", (char *)(chunk_address), chunk_address);
-	// __cio_printf("Debugging: %s or %d\n", (char *)(chunk_address), chunk_address+1);
 
     return chunk_address->uid;
 }
@@ -196,9 +189,9 @@ void *ramdisk_request_space(uint32_t size) {
 	__cio_printf("Ramdisk Requesting Space...\n");
 	__delay(DEBUG_DELAY);
 	#endif
-	// __cio_puts("Requesting space...\n");
 	// Check if the memory pool pointer is valid
     if (pool.pool_start == NULL) {
+        __cio_printf("ERROR: MemoryPool start is NULL!\n");
         return (void *)-1; // Invalid memory pool
     }
 
@@ -212,7 +205,7 @@ void *ramdisk_request_space(uint32_t size) {
     // Mark the chunk as allocated and update its size
 	chunk->uid = next_unique_id++;
     chunk->is_allocated = true;
-	if(chunk->size == 0){ //TODO SEAN
+	if(chunk->size == 0){ //TODO SEAN see if this is really the condition
     	chunk->size = size;
 	}
 
@@ -243,7 +236,7 @@ int ramdisk_release_space(const int uid) {
     }
 
     // Chunk with the specified UID not found
-	__cio_printf("Could not find chunk with UID %d\n", uid);
+	__cio_printf("ERROR: Could not find chunk with UID %d\n", uid);
     return -1;
 }
 
