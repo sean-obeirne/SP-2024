@@ -520,6 +520,7 @@ int list_dir_contents(const char *path) {
 
 /* FILESYSTEM OPERATIONS */
 int _fs_init( void ) {
+	__cio_putchar('\n');
 	#ifdef DEBUG
 	__cio_printf("Initializing Filesystem\n");
 	__delay(DEBUG_DELAY);
@@ -548,12 +549,13 @@ int _fs_init( void ) {
 	// Initialize RAM disk
 	result = disk.init(DISK_SIZE);
     if (result != 0) {
-		__cio_printf("ERROR: RAMdisk init failed!\n");
+		__cio_printf("ERROR: Ramdisk init failed!\n");
         return result;
     }
 	else{
 		#ifdef DEBUG
 		__cio_printf("Ramdisk memory pool initialized with %d bytes\n", DISK_SIZE * SZ_PAGE);
+		__delay(DEBUG_DELAY);
 		#endif
 	}
 	fs.disk = disk;
@@ -581,7 +583,7 @@ int _fs_init( void ) {
 
 	// __cio_printf("EXPECTED: fs.fat: %d to %d\n", fs.fat, fs.fat + 8192);
 	#ifdef DEBUG
-	__cio_printf("fs.fat: %d to %d\n", (int)fs.fat, (int)((char*)fs.fat + (fs.fat_size_sectors * fs.bytes_per_sector)));
+	__cio_printf("Filesystem FAT memory ranges from %d to %d\n", (int)fs.fat, (int)((char*)fs.fat + (fs.fat_size_sectors * fs.bytes_per_sector)));
 	__delay(DEBUG_DELAY);
 	#endif
 	// __delay(100);

@@ -2,10 +2,17 @@
 #define RAMDISK_H
 
 #include "common.h" // Include custom data types
+#include "support.h" // Include delay function
 #include "kmem.h" // Include memory management
 
 #define RAMDISK_PAGES 16
 #define RAMDISK_SIZE (RAMDISK_PAGES * SZ_PAGE)
+
+// Print general debugging info, such as current operation or success status
+///////////////
+#define DEBUG
+///////////////
+#define DEBUG_DELAY 25
 
 // Define the storage interface
 typedef struct {

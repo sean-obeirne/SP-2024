@@ -1,4 +1,5 @@
 #include "ramdisk.h"
+#include "support.h" // Include delay function
 #include "kmem.h"
 #include "lib.h" // Include helpful libraries
 #include "cio.h" // Include console output
@@ -17,20 +18,24 @@ typedef struct Chunk {
 typedef struct MemoryPool {
     struct Chunk *pool_start;
     uint32_t pool_size;
-    // Add any additional fields as needed
 } MemoryPool;
 
 
 
-static MemoryPool pool = {0};
-static uint32_t next_unique_id = 0;
+static MemoryPool pool = {0}; // initialize as NULL
+static uint32_t next_unique_id = 0; // incremented value
+
+
 
 // Function to initialize the storage backend
 int storage_init(StorageInterface *storage) {
-    // Check if storage pointer is valid
+	#ifdef DEBUG
+	__cio_printf("Initializing storage...\n");
+	__delay(DEBUG_DELAY);
+	#endif
     if (storage == NULL) {
-		__cio_printf("ERROR: Failed to init StorageInterface, NULL value found \n");
-        return -1; // Invalid argument
+		__cio_printf("ERROR: Failed to init StorageInterface, NULL value found\n");
+        return -1;
     }
 
 	// Storage interface for RAM disk
@@ -45,13 +50,17 @@ int storage_init(StorageInterface *storage) {
     // Assign RAM disk storage interface to the provided storage pointer
     *storage = ramdisk_interface;
 
-    return 0; // Success
+    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 
 int ramdisk_init(uint32_t pages) {
+	#ifdef DEBUG
+	__cio_printf("Ramdisk Initializing...\n");
+	__delay(DEBUG_DELAY);
+	#endif
 	if (pages <= 2){
 		__cio_printf("ERROR: %d pages is not sufficient for ramdisk\n", pages);
 		return -1;
@@ -70,12 +79,15 @@ int ramdisk_init(uint32_t pages) {
 
     pool.pool_size = pages * SZ_PAGE;
 
-
 	// __cio_printf("Ramdisk memory pool initialized with %d bytes\n", pool.pool_size);
     return 0;
 }
 
 Chunk *get_chunk(const int uid){
+	#ifdef DEBUG
+	__cio_printf("Getting Chunk...\n");
+	__delay(DEBUG_DELAY);
+	#endif
 	Chunk *chunk = pool.pool_start;
 
 	while (chunk != NULL) {
@@ -88,14 +100,18 @@ Chunk *get_chunk(const int uid){
 }
 
 int ramdisk_read(const int uid, void *buffer, uint32_t size) {
-    // Check if the memory pool pointer is valid
+	#ifdef DEBUG
+	__cio_printf("Ramdisk Reading...\n");
+	__delay(DEBUG_DELAY);
+	#endif
     if (pool.pool_start == NULL) {
-        return -1; // Invalid memory pool
+		__cio_printf("ERROR: MemoryPool has no valid start");
+        return -1;
     }
 
     // Check if the byte count is within the bounds of the memory pool
     if (size >= pool.pool_size) {
-		__cio_printf("Data size %d exceeds pool size %d.\n", size, pool.pool_size);
+		__cio_printf("ERROR: Data size %d exceeds pool size %d.\n", size, pool.pool_size);
         return -1;
     }
 
@@ -104,7 +120,7 @@ int ramdisk_read(const int uid, void *buffer, uint32_t size) {
 
 	// Check if chunk can fit in buffer
 	if (chunk->size > size){
-		__cio_printf("Chunk size (%d) too big for full read into buffer size (%d)\n", chunk->size, size);
+		__cio_printf("ERROR: Chunk size (%d) too big for full read into buffer size (%d)\n", chunk->size, size);
         return -1; // Buffer too small
 	}
 
@@ -115,13 +131,15 @@ int ramdisk_read(const int uid, void *buffer, uint32_t size) {
 }
 
 Chunk *get_free_chunk(uint32_t size) {
-    // __cio_puts("Finding free chunk...\n");
+	#ifdef DEBUG
+    __cio_printf("Finding free chunk...\n");
+	__delay(DEBUG_DELAY);
+	#endif
 
     Chunk *chunk = pool.pool_start;
 
 	while (chunk != NULL) {
 		chunk->next = (Chunk *)((char *)chunk + chunk->size + sizeof(Chunk));
-		
         if (!chunk->is_allocated) {
 			if(chunk->size >= size || chunk->size == 0){
             	return chunk;
@@ -129,13 +147,14 @@ Chunk *get_free_chunk(uint32_t size) {
         }
         chunk = chunk->next;
     }
-
-    __cio_puts("No free chunk of sufficient size found\n");
     return NULL;
 }
 
 int ramdisk_write(const void *data, uint32_t size) {
-	// __cio_printf("Ramdisk Writing...\n");
+	#ifdef DEBUG
+	__cio_printf("Ramdisk Writing...\n");
+	__delay(DEBUG_DELAY);
+	#endif
     if (pool.pool_start == NULL) {
 		__cio_printf("Error with pool.\n");
         return -1; // Invalid memory pool
@@ -153,7 +172,7 @@ int ramdisk_write(const void *data, uint32_t size) {
 
     Chunk *chunk_address = get_free_chunk(size);
 	if (chunk_address == NULL) {
-        __cio_printf("Error: No free chunk found.\n");
+        __cio_printf("ERROR: No suitable, free chunk found.\n");
         return -1;
     }
 	chunk_address->uid = next_unique_id++;
@@ -173,6 +192,10 @@ int ramdisk_write(const void *data, uint32_t size) {
 }
 
 void *ramdisk_request_space(uint32_t size) {
+	#ifdef DEBUG
+	__cio_printf("Ramdisk Requesting Space...\n");
+	__delay(DEBUG_DELAY);
+	#endif
 	// __cio_puts("Requesting space...\n");
 	// Check if the memory pool pointer is valid
     if (pool.pool_start == NULL) {
@@ -182,7 +205,7 @@ void *ramdisk_request_space(uint32_t size) {
     // Iterate through the memory pool to find a suitable free chunk
     Chunk *chunk = get_free_chunk(size);
     if (chunk == NULL) {
-        // No free chunk of sufficient size found
+        __cio_printf("ERROR: No suitable, free chunk found.\n");
         return (void *)-1;
     }
 
@@ -197,9 +220,13 @@ void *ramdisk_request_space(uint32_t size) {
 }
 
 int ramdisk_release_space(const int uid) {
+	#ifdef DEBUG
+	__cio_printf("Ramdisk Releasing Space...\n");
+	__delay(DEBUG_DELAY);
+	#endif
     // Check if the memory pool pointer is valid
     if (pool.pool_start == NULL) {
-		__cio_printf("Error with pool.\n");
+		__cio_printf("ERROR: MemoryPool start is NULL\n");
         return -1; // Invalid memory pool
     }
 
@@ -221,7 +248,10 @@ int ramdisk_release_space(const int uid) {
 }
 
 void ramdisk_print( void ){
-	__cio_puts("Printing Ramdisk...\n");
+	#ifdef DEBUG
+	__cio_printf("Ramdisk Printing...\n");
+	__delay(DEBUG_DELAY);
+	#endif
 	Chunk *chunk = pool.pool_start;
 	while(chunk != NULL){
 		if (chunk->size != 0){
@@ -229,5 +259,4 @@ void ramdisk_print( void ){
 		}
 		chunk = chunk->next;
 	}
-	__cio_puts("Ramdisk printed.\n");
 }

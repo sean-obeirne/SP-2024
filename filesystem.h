@@ -7,12 +7,7 @@
 
 // Define constants, macros, and data structures specific to FAT32 filesystem
 
-// Print general debugging info, such as current operation or success status
 
-///////////////
-#define DEBUG
-///////////////
-#define DEBUG_DELAY 25
 
 
 // Constants for FAT32 filesystem
