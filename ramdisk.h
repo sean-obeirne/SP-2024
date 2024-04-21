@@ -17,7 +17,7 @@ typedef struct {
 } StorageInterface;
 
 // Function to initialize the storage backend
-int storage_init(StorageInterface *storage, uint32_t pages);
+int storage_init(StorageInterface *storage);
 
 // Function to switch storage backend
 void use_storage_backend(StorageInterface *storage);

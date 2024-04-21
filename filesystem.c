@@ -8,11 +8,9 @@
 #include "ramdisk.h" // Include memory management
 
 
-// Declare global variables for FileSystem and disk
+// Global variables
 static FileSystem fs;
 // static char *cwd = "/"; // init cwd as root
-// static unsigned char disk_image[DISK_SIZE];
-// static unsigned char disk_image[BLOCK_SIZE * DISK_SIZE];
 static unsigned char disk_image[TOTAL_SIZE];
 
 
@@ -339,6 +337,7 @@ void old_parse_path(const char *path, char **dir_names, char *file_name, int *nu
 void parse_path(const char *path, DeconstructedPath *dp) {
 	#ifdef DEBUG
 	__cio_printf("Deconstructing path...\n");
+	__delay(DEBUG_DELAY);
 	#endif
     // Initialize file name
     dp->file_name[0] = '\0';
@@ -413,6 +412,7 @@ DirectoryEntry *test_parse_path(const char *path) {
 int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
 	#ifdef DEBUG
 	__cio_printf("Adding sub entry...\n");
+	__delay(DEBUG_DELAY);
 	#endif
 	if(dest == NULL || insert == NULL){
 		__cio_printf("ERROR: Invalid parameters to add_sub_entry()\n");
@@ -427,6 +427,7 @@ int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
 	dest->subdirectory->num_files += 1;
 	#ifdef DEBUG
 	__cio_printf("Subdirectory created, %s now contains %s\n", dest->filename, dest->subdirectory->files[0].filename);
+	__delay(DEBUG_DELAY);
 	#endif
 	return 0;
 }
@@ -471,11 +472,20 @@ int dir_contains(DirectoryEntry *parent, const char *target){
 ///////////////////////////////////////////////////////////////
 
 Directory *open_dir(const char *path) {
+	#ifdef DEBUG
+	__cio_printf("Opening Directory...\n");
+	__delay(DEBUG_DELAY);
+	#endif
     // Implement logic to open a directory
     return NULL;
 }
 
 int close_dir(Directory *dir) {
+	#ifdef DEBUG
+	__cio_printf("Closing Directory...\n");
+	__delay(DEBUG_DELAY);
+	#endif
+	
     // Implement logic to close a directory
     return 0;
 }
@@ -483,6 +493,7 @@ int close_dir(Directory *dir) {
 int list_dir_contents(const char *path) {
 	#ifdef DEBUG
 	__cio_printf("Listing...\n");
+	__delay(DEBUG_DELAY);
 	#endif
 	DirectoryEntry *entry = _fs_find_entry(path);
 	Directory *dir = (Directory *)entry->subdirectory;
@@ -509,7 +520,10 @@ int list_dir_contents(const char *path) {
 
 /* FILESYSTEM OPERATIONS */
 int _fs_init( void ) {
-	__cio_printf("\nFilesystem Implementation:\n");
+	#ifdef DEBUG
+	__cio_printf("Initializing Filesystem\n");
+	__delay(DEBUG_DELAY);
+	#endif
 	// Implement FAT32 initialization logic here
 	// Initialize the filesystem structure and perform any necessary setup
 
@@ -523,14 +537,28 @@ int _fs_init( void ) {
 	fs.root_directory_cluster = 2; // root is at cluster _
 				       //Q? do clusters=blocks=pages? and do sectors=segments?
 
-	// Initialize storage interface with RAM disk backend
+	// Initialize StorageInterface disk
     StorageInterface disk;
-    int result = storage_init(&disk, DISK_SIZE);
+    int result = storage_init(&disk);
     if (result < 0) {
         __cio_printf("ERROR: failed to initialize storage\n");
         return -1;
     }
+
+	// Initialize RAM disk
+	result = disk.init(DISK_SIZE);
+    if (result != 0) {
+		__cio_printf("ERROR: RAMdisk init failed!\n");
+        return result;
+    }
+	else{
+		#ifdef DEBUG
+		__cio_printf("Ramdisk memory pool initialized with %d bytes\n", DISK_SIZE * SZ_PAGE);
+		#endif
+	}
 	fs.disk = disk;
+
+
 
 	// Request free space on the RAM disk for the FAT
     fs.fat = (FAT *)disk.request_space(fs.fat_size_sectors * fs.bytes_per_sector);
@@ -554,6 +582,7 @@ int _fs_init( void ) {
 	// __cio_printf("EXPECTED: fs.fat: %d to %d\n", fs.fat, fs.fat + 8192);
 	#ifdef DEBUG
 	__cio_printf("fs.fat: %d to %d\n", (int)fs.fat, (int)((char*)fs.fat + (fs.fat_size_sectors * fs.bytes_per_sector)));
+	__delay(DEBUG_DELAY);
 	#endif
 	// __delay(100);
 	fs.fat_entry_size = 4;
@@ -621,6 +650,7 @@ int _fs_init( void ) {
 	// __delay(20);
 	#ifdef DEBUG
 	__cio_printf("Filesystem has been initialized\n");
+	__delay(DEBUG_DELAY);
 	#endif
 
 	// Return 0 on success
@@ -628,12 +658,20 @@ int _fs_init( void ) {
 }
 
 int _fs_mount( void ) {
+	#ifdef DEBUG
+	__cio_printf("Mounting...\n");
+	__delay(DEBUG_DELAY);
+	#endif
 	// Implement FAT32 mounting logic here
 	// Mount the filesystem using the provided filesystem structure
 	return 0; // Return 0 on success
 }
 
 DirectoryEntry *get_dir_entry_from_path(const char *path){
+	#ifdef DEBUG
+	__cio_printf("Getting dir (from path %s)...\n", path);
+	__delay(DEBUG_DELAY);
+	#endif
 	//path = /dir/subdir/file.txt
 	// start at root
 	// DirectoryEntry *entry = &fs.root_directory[0];
@@ -645,6 +683,10 @@ DirectoryEntry *get_dir_entry_from_path(const char *path){
 }
 
 DirectoryEntry *_fs_find_entry_from_path(const char *path) {
+	#ifdef DEBUG
+	__cio_printf("Finding (from path %s)...\n", path);
+	__delay(DEBUG_DELAY);
+	#endif
 	// path = "/dir/subdir"
 	// __cio_printf("FINDING BY PATH, DUMPING ROOT BEFORE FIND\n");
 	// dump_root();
@@ -678,6 +720,7 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 		#ifdef DEBUG
 		__cio_printf("num_files in directory %s: %d\n", curr_entry->filename, curr_parent->subdirectory->num_files);
 		__cio_printf("curr entry filename: %s\n", curr_entry->filename);
+		__delay(DEBUG_DELAY);
 		#endif
 	}
 	return curr_entry;
@@ -768,6 +811,10 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 }
 
 DirectoryEntry *_fs_find_entry(const char *filename) {
+	#ifdef DEBUG
+	__cio_printf("Finding...\n");
+	__delay(DEBUG_DELAY);
+	#endif
 	// Search for the file in the root directory
 	DirectoryEntry *entry = NULL;
 	for (int i = 0; i < ROOT_DIRECTORY_ENTRIES; i++) {
@@ -784,6 +831,7 @@ DirectoryEntry *_fs_find_entry(const char *filename) {
 int _fs_create_entry_from_path(const char *path, EntryAttribute type){
 	#ifdef DEBUG
 	__cio_printf("Creating (from path %s)...\n", path);
+	__delay(DEBUG_DELAY);
 	#endif
 
 	char *dirs[MAX_PATH_LENGTH]; // Double pointer to store directory names
@@ -919,10 +967,11 @@ int _fs_create_entry_from_path(const char *path, EntryAttribute type){
 int _fs_create_entry(const char *filename, EntryAttribute type) {
 	#ifdef DEBUG
 	__cio_printf("Creating...\n");
+	__delay(DEBUG_DELAY);
 	#endif
     // Check if the filename is valid
     if (filename == NULL || *filename == '\0') {
-		__cio_printf("ERROR: Invalid filename\n");
+		__cio_printf("ERROR: Filename %s undefined\n", filename);
         return -1; // Invalid filename
     }
 
@@ -1008,6 +1057,7 @@ int _fs_create_entry(const char *filename, EntryType type){
 int _fs_rename_entry(const char *old_filename, const char *new_filename){
 	#ifdef DEBUG
 	__cio_printf("Renaming...\n");
+	__delay(DEBUG_DELAY);
 	#endif
 	DirectoryEntry *src = _fs_find_entry(old_filename);
 	DirectoryEntry *dest = _fs_find_entry(new_filename);
@@ -1022,6 +1072,7 @@ int _fs_rename_entry(const char *old_filename, const char *new_filename){
 int _fs_delete_entry(const char *filename){
 	#ifdef DEBUG
 	__cio_printf("Deleting...\n");
+	__delay(DEBUG_DELAY);
 	#endif
 	DirectoryEntry *entry = _fs_find_entry(filename);
 	if(entry == NULL){
@@ -1035,6 +1086,10 @@ int _fs_delete_entry(const char *filename){
 }
 
 int _fs_open_file(const char *filename, const char *mode){
+	#ifdef DEBUG
+	__cio_printf("Opening...\n");
+	__delay(DEBUG_DELAY);
+	#endif
 	if (mode == NULL || (mode[0] != 'r' && mode[0] != 'w')) {
 		// Invalid mode
 		return -1;
@@ -1053,6 +1108,7 @@ int _fs_open_file(const char *filename, const char *mode){
 int _fs_read_file(const char *filename) {
 	#ifdef DEBUG
 	__cio_printf("Reading...\n");
+	__delay(DEBUG_DELAY);
 	#endif
 	// Read data from the specified file into fs.buffer
 
@@ -1074,7 +1130,7 @@ int _fs_read_file(const char *filename) {
 		// Read the block from the disk image into the buffer
 		#ifdef DEBUG
 		__cio_printf("reading block %d\n", current_block);
-		__delay(20);
+		__delay(DEBUG_DELAY);
 		#endif
 		read_block(current_block);
 		dump_fs_buffer();
@@ -1094,6 +1150,7 @@ int _fs_read_file(const char *filename) {
 int _fs_write_file(const char *filename, const void *data) {
 	#ifdef DEBUG
 	__cio_printf("Writing...\n");
+	__delay(DEBUG_DELAY);
 	#endif
 
 	// Find the directory entry for the specified filename
@@ -1120,6 +1177,7 @@ int _fs_write_file(const char *filename, const void *data) {
 		int block_number = current_block;
 		#ifdef DEBUG
 		__cio_printf("Writing to block number %d\n", block_number);
+		__delay(DEBUG_DELAY);
 		#endif
 		// __delay( 200);
 
@@ -1149,12 +1207,17 @@ int _fs_write_file(const char *filename, const void *data) {
 }
 
 int _fs_close_file(const char *filename){
+	#ifdef DEBUG
+	__cio_printf("Closing...\n");
+	__delay(DEBUG_DELAY);
+	#endif
 	return 0;
 }
 
 int _fs_print_entry(const char *filename){
 	#ifdef DEBUG
 	__cio_printf("Printing...\n");
+	__delay(DEBUG_DELAY);
 	#endif
 	DirectoryEntry *entry = _fs_find_entry(filename);
 	if(entry == NULL){

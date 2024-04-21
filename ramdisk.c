@@ -26,9 +26,10 @@ static MemoryPool pool = {0};
 static uint32_t next_unique_id = 0;
 
 // Function to initialize the storage backend
-int storage_init(StorageInterface *storage, uint32_t pages) {
+int storage_init(StorageInterface *storage) {
     // Check if storage pointer is valid
     if (storage == NULL) {
+		__cio_printf("ERROR: Failed to init StorageInterface, NULL value found \n");
         return -1; // Invalid argument
     }
 
@@ -41,12 +42,6 @@ int storage_init(StorageInterface *storage, uint32_t pages) {
 		.release_space = ramdisk_release_space
 	};
 
-	// Initialize RAM disk
-    int result = ramdisk_init(pages);
-    if (result != 0) {
-        return result; // Error initializing RAM disk
-    }
-
     // Assign RAM disk storage interface to the provided storage pointer
     *storage = ramdisk_interface;
 
@@ -57,9 +52,13 @@ int storage_init(StorageInterface *storage, uint32_t pages) {
 
 
 int ramdisk_init(uint32_t pages) {
+	if (pages <= 2){
+		__cio_printf("ERROR: %d pages is not sufficient for ramdisk\n", pages);
+		return -1;
+	}
     pool.pool_start = (Chunk *)_km_page_alloc(pages);
 	if(pool.pool_start == NULL){
-		__cio_printf("Failed to init ramdisk pool with %d pages", pages);
+		__cio_printf("ERROR: Failed to init ramdisk pool with %d pages", pages);
 		return -1;
 	}
 	next_unique_id = 0;
@@ -72,8 +71,7 @@ int ramdisk_init(uint32_t pages) {
     pool.pool_size = pages * SZ_PAGE;
 
 
-    // Your implementation here
-	__cio_printf("Ramdisk memory pool initiated with %d bytes\n", pool.pool_size);
+	// __cio_printf("Ramdisk memory pool initialized with %d bytes\n", pool.pool_size);
     return 0;
 }
 
