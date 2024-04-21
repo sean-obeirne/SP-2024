@@ -7,6 +7,9 @@
 
 // Define constants, macros, and data structures specific to FAT32 filesystem
 
+// Print general debugging info, such as current operation or success status
+// #define DEBUG
+
 // Constants for FAT32 filesystem
 #define MAX_FAT_ENTRIES 20
 #define FAT_EOC 0xFFFF
@@ -24,11 +27,6 @@
 #define FS_BUFFER_SIZE 4096
 // #define ROOT_LEN 512 // how many files can be in root?
 
-
-typedef enum {
-	FILE_ENTRY,
-	DIRECTORY_ENTRY
-} EntryType;
 
 typedef enum {
     FILE_ATTRIBUTE = 0x01,      // Attribute for files
@@ -54,7 +52,7 @@ typedef struct Directory {
 
 typedef struct {
 	char path[MAX_PATH_LENGTH];
-    char *paths[MAX_FILENAME_LENGTH];  // Array to store directory names
+    char *paths[MAX_FILENAME_LENGTH];  // Array to store path entries
     char *dirs[MAX_FILENAME_LENGTH];  // Array to store directory names
     char file_name[MAX_FILENAME_LENGTH];  // String to store file name
     int num_dirs;  // Number of directory names
@@ -209,9 +207,16 @@ int _fs_mount(void);
 /*
  ** Find a DirectoryEntry from root.
  ** @param filename of the file to find.
- ** @return 0 on success, -1 on failure.
+ ** @return DirectoryEntry with filename in root
  */
 DirectoryEntry *_fs_find_entry(const char *filename);
+
+/*
+ ** Find a DirectoryEntry
+ ** @param path of the file to find.
+ ** @return DirectoryEntry with path "path"
+ */
+DirectoryEntry *_fs_find_entry_from_path(const char *path);
 
 /*
  ** Read data from a file in the filesystem.
@@ -238,7 +243,7 @@ int _fs_write_file(const char *filename, const void *data/*, size_t size, off_t 
  ** @param filename Name of the file to create.
  ** @return 0 on success, -1 on failure.
  */
-int _fs_create_entry(const char *filename, EntryType type);
+int _fs_create_entry(const char *filename, EntryAttribute type);
 
 /*
  ** Delete a file from the filesystem.
