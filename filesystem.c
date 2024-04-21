@@ -1,4 +1,5 @@
 #include "filesystem.h" // Include the corresponding header file
+#include "fshelper.h" // Include the corresponding header file
 #include "common.h" // Include custom data types
 #include "support.h" // Include delay function
 #include "lib.h" // Include helpful libraries
@@ -9,43 +10,10 @@
 
 // Declare global variables for FileSystem and disk
 static FileSystem fs;
-static char *cwd = "/"; // init cwd as root
+// static char *cwd = "/"; // init cwd as root
 // static unsigned char disk_image[DISK_SIZE];
 // static unsigned char disk_image[BLOCK_SIZE * DISK_SIZE];
 static unsigned char disk_image[TOTAL_SIZE];
-
-static char *strtok_ptr = NULL;
-
-Directory *open_dir(const char *path) {
-    // Implement logic to open a directory
-    return NULL;
-}
-
-int close_dir(Directory *dir) {
-    // Implement logic to close a directory
-    return 0;
-}
-
-int list_dir_contents(const char *path) {
-	#ifdef DEBUG
-	__cio_printf("Listing...\n");
-	#endif
-	DirectoryEntry *entry = _fs_find_entry(path);
-	Directory *dir = (Directory *)entry->subdirectory;
-	phl();
-	__cio_printf(" Contents of %s \"%s\":\n", entry->type == 1 ? "file": "directory", entry->filename);
-	if (entry->type == 1){
-		__cio_printf("ERROR: File %s found while listing directory contents", entry->filename);
-		return -1;
-	}
-	else{
-		// Print directory contents
-		for (uint32_t i = 0; i < dir->num_files; i++) {
-			__cio_printf("  -> %s: %s\n", dir->files[i].filename, dir->files[i].type == 1 ? "file": "directory"); //TODO SEAN expand the info here
-		}
-		return 0; // Success
-	}
-}
 
 
 ///////////////////////////////////////////////////////////////
@@ -53,6 +21,63 @@ int list_dir_contents(const char *path) {
 //////////////////////HELPER FUNCTIONS/////////////////////////
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
+
+
+void pl(char line_char) {
+	if(line_char == NULL){
+		line_char = '-';
+	}
+	for(int i = 0; i < 80; i++){
+		__cio_putchar(line_char);
+	}
+}
+
+// Print header then print full line of line_char
+void plh( const char *header, char line_char ){
+	if(header != NULL){
+		__cio_puts(header);
+		if (header[__strlen(header)-1] != '\n'){
+			__cio_putchar('\n');
+		}
+	}
+	pl(line_char);
+}
+
+// Print header (or don't), then print 'half' line
+void phl( const char * header ){
+	if(header != NULL){
+		__cio_puts(header);
+		if (header[__strlen(header)-1] != '\n'){
+			__cio_putchar('\n');
+		}
+	}
+	__cio_puts("+--------------------------------------+\n");
+}
+
+// Print header (or don't), then print variable length line
+void pvl( const char *header, char line_char ){
+	if(header == NULL){
+		__cio_printf("ERROR: Cannot print header, header is null\n");
+		return;
+	}
+	if(line_char == NULL){
+		line_char = '-';
+	}
+	// Print header
+	__cio_puts(header);
+	if (header[__strlen(header)-1] != '\n'){
+		__cio_putchar('\n');
+	}
+	// Print dashes
+	int num_dashes = __strlen(header);
+	bool_t maxxed = num_dashes >= 80 ? true : false;
+	while(num_dashes > 0){
+		__cio_putchar(line_char);
+		num_dashes--;
+	}
+	if(!maxxed)
+		__cio_putchar('\n');
+}
 
 void init_fs_buffer( void ) {
 	fs.buffer = (char *)_km_page_alloc(1);
@@ -64,7 +89,7 @@ void clear_fs_buffer( void ) {
 }
 
 int dump_fs_buffer( void ){
-	__cio_printf("Dumping Buffer:\n");
+	pvl("Dumping Buffer:\n", '-');
 	__delay(20);
 	__cio_printf("%s\n", (char *)fs.buffer);
 	__delay(20);
@@ -72,18 +97,18 @@ int dump_fs_buffer( void ){
 }
 
 int dump_root( void ){
-	__cio_printf("Dumping Root:\n");
+	pvl("Dumping Root:\n", '-');
 	for(int i = 0; i < ROOT_DIRECTORY_ENTRIES; i++){
 		if( __strcmp(fs.root_directory[i].filename, "") != 0 ){
-			__delay( 20 );
 			__cio_printf("file %d: filename:%s\n", i, fs.root_directory[i].filename);
+			__delay( 20 );
 		}
 	}
-	__delay( 100 );
 	return 0;
 }
 
 void dump_fat( void ) {
+	phl("Dumping FAT\n");
     // Iterate over each entry in the FAT table
     for (int i = 0; i < MAX_FAT_ENTRIES; i++) {
         // Print the details of each FAT entry
@@ -91,7 +116,7 @@ void dump_fat( void ) {
 		__delay(5);
     }
 }
-
+/*
 char *dump_disk_image_block( int block_number ){
 	// __cio_puts("Dumping Disk Image Block...\n");
 	// __cio_printf("%s\n", disk_image);
@@ -161,7 +186,7 @@ char *dump_disk_image( void ){
 	}
 	return 0;
 }
-
+*/
 void wipe_disk( void ){
 	// __memset(disk_image, 0, TOTAL_SIZE);
 	__memclr(disk_image, TOTAL_SIZE);
@@ -170,16 +195,6 @@ void wipe_disk( void ){
 	//     disk_image[i] = 0;
 	// }
 	// return 0;
-}
-
-// Print line
-void pl( void ){
-	__cio_puts("-------------------------------------------------------------------------------\n");
-}
-
-// Print 'half' line
-void phl( void ){
-	__cio_puts("+--------------------------------------+\n");
 }
 
 // read block block_number to fs.buffer
@@ -282,7 +297,7 @@ void strip_path(const char *path, char *final_element){
 		path_i++;
 	}
 	file_name[file_name_i] = '\0';
-	strcpy(final_element, file_name);
+	__strcpy(final_element, file_name);
 }
 
 void old_parse_path(const char *path, char **dir_names, char *file_name, int *num_dirs) {
@@ -435,6 +450,10 @@ int add_fat_entry(uint32_t next_cluster) {
     return -1;
 }
 
+int get_subdirectory_count(DirectoryEntry *parent){
+	return 0;
+}
+
 int dir_contains(DirectoryEntry *parent, const char *target){
 	int subdir_count = get_subdirectory_count(parent);
 	for(int i = 0; i < subdir_count; i++){
@@ -445,9 +464,42 @@ int dir_contains(DirectoryEntry *parent, const char *target){
 	return -1;
 }
 
-int get_subdirectory_count(DirectoryEntry *parent){
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+////////////////////DIRECTORY FUNCTIONS////////////////////////
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+Directory *open_dir(const char *path) {
+    // Implement logic to open a directory
+    return NULL;
+}
+
+int close_dir(Directory *dir) {
+    // Implement logic to close a directory
+    return 0;
+}
+
+int list_dir_contents(const char *path) {
+	#ifdef DEBUG
+	__cio_printf("Listing...\n");
+	#endif
+	DirectoryEntry *entry = _fs_find_entry(path);
+	Directory *dir = (Directory *)entry->subdirectory;
+	phl(NULL);
+	__cio_printf(" Contents of %s \"%s\":\n", entry->type == 1 ? "file": "directory", entry->filename);
+	if (entry->type == 1){
+		__cio_printf("ERROR: File %s found while listing directory contents", entry->filename);
+		return -1;
+	}
+	// Print directory contents
+	for (uint32_t i = 0; i < dir->num_files; i++) {
+		__cio_printf("  -> %s: %s\n", dir->files[i].filename, dir->files[i].type == 1 ? "file": "directory"); //TODO SEAN expand the info here
+	}
+	__cio_putchar('\n');
 	return 0;
 }
+
 
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
@@ -604,14 +656,14 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 	
 	// __cio_printf("dp.dirs[0]: %s\n", dp.dirs[0]);
 	// __cio_printf("dp.num_dirs: %d\n", dp.num_dirs);
-	DirectoryEntry *curr_parent = dp.dirs[0];
-	if(curr_parent->filename == "/" && dp.num_dirs == 1){ // we are looking in root
+	DirectoryEntry *curr_parent = _fs_find_entry(dp.dirs[0]); // TODO SEAN - this will become from_path(dp.paths[0])
+	if(__strcmp(curr_parent->filename, "/") == 0 && dp.num_dirs == 1){ // we are looking in root
 		// __cio_printf("FINDING ENTRY %s IN ROOT\n", dp.file_name);
 		return _fs_find_entry(dp.file_name);
 	}
 	DirectoryEntry *curr_entry;
 	for(int i = 1; i < dp.num_dirs; i++){
-		curr_entry = dp.dirs[i];
+		curr_entry = _fs_find_entry(dp.dirs[i]);  // TODO SEAN - this will become from_path(dp.paths[0])
 		if (curr_parent->type == FILE_ATTRIBUTE){
 			__cio_printf("ERROR: Type mismatch, found parent \"file\" %s while looking for directory\n", curr_parent->filename);
 		}
