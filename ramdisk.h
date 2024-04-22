@@ -12,11 +12,12 @@
 ////////////////
 #define DEBUG
 ////////////////
-#define DEBUG_DELAY 100
 #define STEP 1
-#define INF_PAUSE 10000000
-#define LONG_PAUSE 1000
+#define MOMENT 20
+#define DEBUG_DELAY 100
 #define SHORT_PAUSE 200
+#define LONG_PAUSE 1000
+#define INF_PAUSE 10000000
 
 // Define the storage interface functions for portability
 typedef struct {
