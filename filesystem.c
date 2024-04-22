@@ -344,7 +344,7 @@ int dir_contains(DirectoryEntry *parent, const char *target){
 ///////////////////////////////////////////////////////////////
 
 int cd(const char *relpath){
-
+	return 0;
 }
 
 Directory *open_dir(const char *path) {
@@ -623,8 +623,8 @@ int _fs_create_entry_from_path(const char *path, EntryAttribute type){
 	clear_fs_buffer();
 	int result = -1;
 	if(dp.num_dirs == 0){
-		int created_root_entry = _fs_create_root_entry(dp.file_name, type);
-		return created_root_entry;
+		result = _fs_create_root_entry(dp.file_name, type);
+		return result;
 
 		// // Initialize the entry
 		// __strcpy(new_entry->filename, filename);

@@ -238,7 +238,7 @@ int _fs_write_file(const char *path, const void *data/*, size_t size, off_t offs
  ** @param filename Name of the file to create.
  ** @return 0 on success, -1 on failure.
  */
-int _fs_create_entry(const char *filename, EntryAttribute type);
+int _fs_create_root_entry(const char *filename, EntryAttribute type);
 
 /*
  ** Create a new file in the filesystem.
