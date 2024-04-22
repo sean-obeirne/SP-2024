@@ -11,7 +11,7 @@
 // Global variables
 static FileSystem fs;
 static char *cwd = "/";
-
+static char working_path[MAX_PATH_LENGTH];
 
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
@@ -233,43 +233,62 @@ void parse_path(const char *path, DeconstructedPath *dp) {
     char scratch_path[MAX_PATH_LENGTH];
     char filename[MAX_FILENAME_LENGTH];
     int path_i = 0;
-    int dir_names_i = 0;
+	int scratch_i = 0;
     int filename_i = 0;
+    int dir_names_i = 0;
 	// __cio_printf("SCRATCH PATH: %s\n", scratch_path);
 
-    // Loop through the path string
-    while (path[path_i] != '\0') {
-		scratch_path[path_i] = path[path_i];
-		// If we hit a separator
-        if (path[path_i] == '/') {
-            // Null-terminate the directory name in scratch_path
-			if (path_i == 0){
-            	filename[0] = '/';
-            	filename[1] = '\0';
-				dp->num_dirs--;
+	while(path_i < __strlen(path)){ // 11
+		filename[filename_i] = path[path_i];
+		scratch_path[scratch_i] = path[path_i];
+
+		if(path[path_i] == '/'){
+			if(path_i == 0){
+				filename[filename_i] = '/';
+				scratch_path[scratch_i] = '/';
 			} else{
-            	filename[filename_i] = '\0';
-            	scratch_path[path_i] = '\0';
+				filename[filename_i] = '\0';
+				scratch_path[scratch_i] = '\0';
 			}
-            // Allocate memory for the directory name and copy it into the paths array
-            dp->dirs[dir_names_i] = _km_page_alloc(1);
+
+			__cio_printf("So filename: %s  scrach_path: %s\n", filename, scratch_path);
+
+			// export filename
+			dp->dirs[dir_names_i] = _km_page_alloc(1);
             __strcpy(dp->dirs[dir_names_i], filename);
             dp->paths[dir_names_i] = _km_page_alloc(1);
-			__cio_printf("SCRATCH_PATH: %s AT INDEX %d\n", scratch_path, dir_names_i);
+			// __cio_printf("SCRATCH_PATH: %s AT INDEX %d\n", scratch_path, dir_names_i);
             __strcpy(dp->paths[dir_names_i], scratch_path);
-			scratch_path[path_i] = path[path_i];
-			dp->num_dirs++;
+			
             dir_names_i++;
-            // Reset the index for the file name
-            filename_i = 0;
-        } else {
-            // Append character to scratch_path for directory or file name
-            filename[filename_i++] = path[path_i];
-        }
-        path_i++;
-    }
-    scratch_path[filename_i] = '\0';
-    __strcpy(dp->filename, filename);
+
+			scratch_path[scratch_i] = path[path_i];
+			filename_i = -1;
+		}
+
+		scratch_i++;
+		filename_i++;
+		path_i++;
+	}
+	// __cio_printf("This step, PRE NULL filename=%s and scratch_path=%s\n", filename, scratch_path);
+	if(path[path_i] == '\0'){
+		filename[filename_i] = '\0';
+		scratch_path[scratch_i] = '\0';
+
+		dp->dirs[dir_names_i] = _km_page_alloc(1);
+		__strcpy(dp->dirs[dir_names_i], filename);
+		dp->paths[dir_names_i] = _km_page_alloc(1);
+		// __cio_printf("SCRATCH_PATH: %s AT INDEX %d\n", scratch_path, dir_names_i);
+		__strcpy(dp->paths[dir_names_i], scratch_path);
+		dp->num_dirs = dir_names_i + 1;
+		__cio_printf("So filename: %s  scrach_path: %s\n", filename, scratch_path);
+		__strcpy(dp->filename, filename);
+	}
+	// __cio_printf("This step, POST NULL filename=%s and scratch_path=%s\n", filename, scratch_path);
+	__delay(50);
+
+	print_parsed_path(*dp);
+
 	#ifdef DEBUG
 	__cio_printf("Deconstructing path!!!\n");
 	__delay(STEP);
@@ -592,6 +611,8 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 
 	DeconstructedPath dp;
     parse_path(path, &dp);
+	pl();
+	print_parsed_path(dp);
 	// print_parsed_path(dp);
 	// __delay(INF_PAUSE);
 
@@ -604,6 +625,16 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 		return _fs_find_root_entry(dp.paths[0]);
 		// looking for file
 	}
+	for(int i = 0; i < dp.num_dirs; i++){
+		__cio_printf("paths[%d]: %s\n", i, dp.paths[i]);
+	}
+
+	// __delay(LONG_PAUSE);
+
+
+
+
+
 	DirectoryEntry *curr_parent = _fs_find_entry_from_path(dp.paths[0]); // TODO SEAN - this will become from_path(dp.paths[0])
 	__cio_printf("Hey we found it!\n");
 	
@@ -674,6 +705,7 @@ int _fs_create_entry_from_path(const char *path, EntryAttribute type){
 
 	DeconstructedPath dp;
     parse_path(path, &dp);
+	print_parsed_path(dp);
 
 	clear_fs_buffer();
 	int result = -1;
@@ -681,7 +713,7 @@ int _fs_create_entry_from_path(const char *path, EntryAttribute type){
 		result = _fs_create_root_entry(dp.filename, type);
 		return result;
 	}
-	print_parsed_path(dp);
+	// print_parsed_path(dp);
 
 	// num_dirs >= 1
 	DirectoryEntry *parent = _fs_find_root_entry(dp.dirs[0]);
