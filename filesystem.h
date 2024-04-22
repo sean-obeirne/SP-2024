@@ -241,6 +241,14 @@ int _fs_write_file(const char *path, const void *data/*, size_t size, off_t offs
 int _fs_create_entry(const char *filename, EntryAttribute type);
 
 /*
+ ** Create a new file in the filesystem.
+ ** @param path Path of the entry to create.
+ ** @param type Type of entry (1 == file, 2 == directory)
+ ** @return 0 on success, -1 on failure.
+ */
+int _fs_create_entry_from_path(const char *path, EntryAttribute type);
+
+/*
  ** Delete a file from the filesystem.
  ** @param filename Name of the file to delete.
  ** @return 0 on success, -1 on failure.

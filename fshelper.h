@@ -11,7 +11,9 @@
 // Print general debugging info, such as current operation or success status
 // #define DEBUG
 
-void pl(char line_char);
+void ph(const char *header);
+void pl(void);
+void plw(char line_char);
 void plh(const char *header, char line_char);
 void phl(const char *header);
 void pvl(const char *header, char line_char);

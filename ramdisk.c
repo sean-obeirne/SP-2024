@@ -30,7 +30,7 @@ static uint32_t next_unique_id = 0; // incrementable value
 int storage_init(StorageInterface *storage) {
 	#ifdef DEBUG
 	__cio_printf("Initializing storage...\n");
-	__delay(DEBUG_DELAY);
+	__delay(STEP);
 	#endif
 
     if (storage == NULL) {
@@ -59,7 +59,7 @@ int storage_init(StorageInterface *storage) {
 int ramdisk_init(uint32_t pages) {
 	#ifdef DEBUG
 	__cio_printf("Ramdisk Initializing...\n");
-	__delay(DEBUG_DELAY);
+	__delay(STEP);
 	#endif
 
 	if (pages <= 2){
@@ -86,7 +86,7 @@ int ramdisk_init(uint32_t pages) {
 Chunk *get_chunk(const int uid){
 	#ifdef DEBUG
 	__cio_printf("Getting Chunk...\n");
-	__delay(DEBUG_DELAY);
+	__delay(STEP);
 	#endif
 
 	Chunk *chunk = pool.pool_start;
@@ -103,7 +103,7 @@ Chunk *get_chunk(const int uid){
 int ramdisk_read(const int uid, void *buffer, uint32_t size) {
 	#ifdef DEBUG
 	__cio_printf("Ramdisk Reading...\n");
-	__delay(DEBUG_DELAY);
+	__delay(STEP);
 	#endif
 
     if (pool.pool_start == NULL) {
@@ -135,7 +135,7 @@ int ramdisk_read(const int uid, void *buffer, uint32_t size) {
 Chunk *get_free_chunk(uint32_t size) {
 	#ifdef DEBUG
     __cio_printf("Finding free chunk...\n");
-	__delay(DEBUG_DELAY);
+	__delay(STEP);
 	#endif
 
     Chunk *chunk = pool.pool_start;
@@ -155,7 +155,7 @@ Chunk *get_free_chunk(uint32_t size) {
 int ramdisk_write(const void *data, uint32_t size) {
 	#ifdef DEBUG
 	__cio_printf("Ramdisk Writing...\n");
-	__delay(DEBUG_DELAY);
+	__delay(STEP);
 	#endif
 
     if (pool.pool_start == NULL) {
@@ -192,7 +192,7 @@ int ramdisk_write(const void *data, uint32_t size) {
 void *ramdisk_request_space(uint32_t size) {
 	#ifdef DEBUG
 	__cio_printf("Ramdisk Requesting Space...\n");
-	__delay(DEBUG_DELAY);
+	__delay(STEP);
 	#endif
 
 	// Check if the memory pool pointer is valid
@@ -221,7 +221,7 @@ void *ramdisk_request_space(uint32_t size) {
 int ramdisk_release_space(const int uid) {
 	#ifdef DEBUG
 	__cio_printf("Ramdisk Releasing Space...\n");
-	__delay(DEBUG_DELAY);
+	__delay(STEP);
 	#endif
 
     // Check if the memory pool pointer is valid
@@ -250,7 +250,7 @@ int ramdisk_release_space(const int uid) {
 void ramdisk_print( void ){
 	#ifdef DEBUG
 	__cio_printf("Ramdisk Printing...\n");
-	__delay(DEBUG_DELAY);
+	__delay(STEP);
 	#endif
 
 	Chunk *chunk = pool.pool_start;

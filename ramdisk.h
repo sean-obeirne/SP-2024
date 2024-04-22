@@ -10,9 +10,13 @@
 
 // Print general debugging info, such as current operation or success status
 ////////////////
-// #define DEBUG
+#define DEBUG
 ////////////////
-#define DEBUG_DELAY 25
+#define DEBUG_DELAY 100
+#define STEP 1
+#define INF_PAUSE 10000000
+#define LONG_PAUSE 1000
+#define SHORT_PAUSE 200
 
 // Define the storage interface functions for portability
 typedef struct {
