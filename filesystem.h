@@ -1,15 +1,10 @@
 #ifndef FAT32_H_
 #define FAT32_H_
 
-// #include <stdint.h> // Include necessary standard headers
 #include "common.h"
 #include "ramdisk.h"
 
 // Define constants, macros, and data structures specific to FAT32 filesystem
-
-
-
-
 // Constants for FAT32 filesystem
 #define MAX_FAT_ENTRIES 20
 #define FAT_EOC 0xFFFF
@@ -236,7 +231,7 @@ int _fs_read_file(const char *filename/*, void *buffer, size_t size, off_t offse
  ** @param offset Offset within the file to start writing from.
  ** @return Number of bytes written on success, -1 on failure.
  */
-int _fs_write_file(const char *filename, const void *data/*, size_t size, off_t offset*/);
+int _fs_write_file(const char *path, const void *data/*, size_t size, off_t offset*/);
 
 /*
  ** Create a new file in the filesystem.
