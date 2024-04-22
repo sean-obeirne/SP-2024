@@ -283,7 +283,7 @@ int _fs_close_file(const char *filename);
  ** @param filename of the file to print.
  ** @return 0 on success, -1 on failure.
  */
-int _fs_print_entry(const char *filename);
+int _fs_print_entry(DirectoryEntry *entry);
 
 /*
  ** Set the permissions of a file in the filesystem.
@@ -292,6 +292,9 @@ int _fs_print_entry(const char *filename);
  ** @return 0 on success, -1 on failure.
  */
 // int _fs_set_permissions(const char *filename, mode_t permissions);
+
+
+void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryAttribute type, uint32_t cluster, DirectoryEntry *next);
 
 // Add more function prototypes as needed for your FAT32 filesystem implementation
 

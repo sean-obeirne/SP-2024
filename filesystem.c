@@ -126,13 +126,16 @@ int dump_fs_buffer( void ){
 }
 
 int dump_root( void ){
+	pln();
 	pvl("Dumping Root:\n", '-');
 	for(int i = 0; i < ROOT_DIRECTORY_ENTRIES; i++){
 		if( __strcmp(fs.root_directory[i].filename, "") != 0 ){
+			// _fs_print_entry(fs.root_directory[i].filename);
 			__cio_printf("file %d: filename:%s\n", i, fs.root_directory[i].filename);
-			__delay( 20 );
 		}
 	}
+	pln();
+	__delay(SHORT_PAUSE);
 	return 0;
 }
 
@@ -245,13 +248,14 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 		if(path[path_i] == '/'){
 			if(path_i == 0){
 				filename[filename_i] = '/';
+				filename[filename_i + 1] = '\0';
 				scratch_path[scratch_i] = '/';
 			} else{
 				filename[filename_i] = '\0';
 				scratch_path[scratch_i] = '\0';
 			}
 
-			__cio_printf("So filename: %s  scrach_path: %s\n", filename, scratch_path);
+			// __cio_printf("So filename: %s  scrach_path: %s\n", filename, scratch_path);
 
 			// export filename
 			dp->dirs[dir_names_i] = _km_page_alloc(1);
@@ -281,13 +285,13 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 		// __cio_printf("SCRATCH_PATH: %s AT INDEX %d\n", scratch_path, dir_names_i);
 		__strcpy(dp->paths[dir_names_i], scratch_path);
 		dp->num_dirs = dir_names_i + 1;
-		__cio_printf("So filename: %s  scrach_path: %s\n", filename, scratch_path);
+		// __cio_printf("So filename: %s  scrach_path: %s\n", filename, scratch_path);
 		__strcpy(dp->filename, filename);
 	}
 	// __cio_printf("This step, POST NULL filename=%s and scratch_path=%s\n", filename, scratch_path);
-	__delay(50);
+	// __delay(MOMENT);
 
-	print_parsed_path(*dp);
+	// print_parsed_path(*dp);
 
 	#ifdef DEBUG
 	__cio_printf("Deconstructing path!!!\n");
@@ -350,14 +354,13 @@ int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
 		return -1;
 	}
 	if(dest->type != 2){
-		// __cio_printf("%s\n", dest->subdirectory->files[0].filename);
 		__cio_printf("ERROR: Adding DirectoryEntry %s to a file, %s, aborting\n", dest->filename, insert->filename);
 		return -1;
 	}
 	dest->subdirectory->files[0] = *insert; // TODO SEAN make this smart
 	dest->subdirectory->num_files += 1;
 	#ifdef DEBUG
-	__cio_printf("Subdirectory created, %s now contains %s\n", dest->filename, dest->subdirectory->files[0].filename);
+	__cio_printf("Adding sub entry!!!\n");
 	__delay(STEP);
 	#endif
 
@@ -611,27 +614,19 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 
 	DeconstructedPath dp;
     parse_path(path, &dp);
-	pl();
-	print_parsed_path(dp);
-	// print_parsed_path(dp);
-	// __delay(INF_PAUSE);
 
 
-	if (dp.num_dirs == 0){
-		#ifdef DEBUG
-		__cio_printf("Finding (from path %s)!!!(num_dirs=0)\n", path);
-		__delay(STEP);
-		#endif
-		return _fs_find_root_entry(dp.paths[0]);
+	if (dp.num_dirs <= 1){
+		return _fs_find_root_entry(dp.paths[1]);
 		// looking for file
 	}
-	for(int i = 0; i < dp.num_dirs; i++){
-		__cio_printf("paths[%d]: %s\n", i, dp.paths[i]);
-	}
+	// for(int i = 0; i < dp.num_dirs; i++){
+	// 	__cio_printf("paths[%d]: %s\n", i, dp.paths[i]);
+	// }
 
 	// __delay(LONG_PAUSE);
 
-
+	return NULL;
 
 
 
@@ -673,7 +668,7 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 
 DirectoryEntry *_fs_find_root_entry(const char *filename) {
 	#ifdef DEBUG
-	__cio_printf("Finding...\n");
+	__cio_printf("Finding %s ...\n", filename);
 	__delay(STEP);
 	#endif
 
@@ -687,9 +682,9 @@ DirectoryEntry *_fs_find_root_entry(const char *filename) {
 	}
 	#ifdef DEBUG
 	if(entry == NULL){
-		__cio_printf("Finding---\n");
+		__cio_printf("Finding %s ---\n", filename);
 	} else{
-		__cio_printf("Finding!!!\n");
+		__cio_printf("Finding %s !!!\n", filename);
 	}
 	__delay(STEP);
 	#endif
@@ -705,25 +700,97 @@ int _fs_create_entry_from_path(const char *path, EntryAttribute type){
 
 	DeconstructedPath dp;
     parse_path(path, &dp);
-	print_parsed_path(dp);
 
-	clear_fs_buffer();
-	int result = -1;
-	if(dp.num_dirs == 0){ // create entry in root
-		result = _fs_create_root_entry(dp.filename, type);
-		return result;
+	DirectoryEntry *entry = _fs_find_entry_from_path(path);
+	if(entry != NULL){
+		__cio_printf("ERROR: File with path %s already exists\n", path);
+		return -1;
 	}
-	// print_parsed_path(dp);
+	DirectoryEntry *parent = NULL;
+	DirectoryEntry *child = NULL;
+	int result = -1;
+	int curr_depth = 0;
+
+	pln();
+	// dump_root();
+	if(dp.num_dirs > 0){
+		parent = _fs_find_root_entry(dp.dirs[0]);
+		__cio_printf("Depth of %d:\n  Parent: %s\n", curr_depth, parent->filename, child->filename);
+		curr_depth = 1;
+	}
+
+	pln();
+	// dump_root();
+	if(dp.num_dirs > 1){
+		parent = _fs_find_root_entry(dp.dirs[0]);
+		child = _fs_find_root_entry(dp.dirs[1]);
+		if (child == NULL){
+			result = _fs_create_root_entry(dp.dirs[1], DIRECTORY_ATTRIBUTE);
+			if(result < 0){
+				__cio_printf("ERROR: Failed to create root entry %s\n", dp.paths[1]);
+				return -1;
+			}
+			child = _fs_find_root_entry(dp.dirs[1]);
+		}
+		// parent: /
+		// child:  /___
+		__cio_printf("Depth of %d:\n  Parent: %s,  Child: %s\n", curr_depth, parent->filename, child->filename);
+		curr_depth = 2;
+	}
+	
+	pln();
+	// dump_root();
+	if (dp.num_dirs > 2){
+		parent = _fs_find_root_entry(dp.dirs[1]);
+		__cio_printf("Looking for child at %s\n", dp.paths[2]);
+		child = _fs_find_entry_from_path(dp.paths[2]);
+		if(child == NULL){
+			_fs_initialize_directory_entry(child, dp.dirs[2], 0, DIRECTORY_ATTRIBUTE, 0, NULL);
+			_fs_print_entry(child);
+			create_subentry(parent, dp.dirs[2], type);
+			child = _fs_find_entry_from_path(dp.paths[2]);
+			__cio_printf("DID WE GET THE CHILD? %s\n", child->filename);
+			// _fs_create_entry_from_path(path, DIRECTORY_ATTRIBUTE)
+		}
+
+		__cio_printf("Depth of %d:\n  Parent: %s,  Child: %s\n", curr_depth, parent->filename, child->filename);
+		pln();
+		curr_depth = 3;
+	}
+	dump_root();
+	__cio_printf("Parent: %s\n", parent->filename);
+	__cio_printf("Child: %s\n", child->filename);
+	pl();
+/*
+	while(curr_depth < MAX_DEPTH){
+		break;
+	}
+	if(parent->filename[0] = '/'){
+		_fs_find_root_entry(entry);
+	}
+	// __cio_printf("Parent: %s\n", dp.dirs[0]);
+	if(dp.num_dirs > 0){
+		// TODO SEAN - check 0 case, see if mounted?	
+	}
+*/
+	__delay(SHORT_PAUSE);
+
+	// clear_fs_buffer();
+	// int result = -1;
+	// if(dp.num_dirs <= 1){ // create entry in root
+	// 	result = _fs_create_root_entry(dp.filename, type);
+	// 	return result;
+	// }
 
 	// num_dirs >= 1
-	DirectoryEntry *parent = _fs_find_root_entry(dp.dirs[0]);
+	// DirectoryEntry *parent = _fs_find_root_entry(dp.dirs[0]);
 	// __delay(SHORT_PAUSE);
-	pln();
-	DirectoryEntry *child = _fs_find_entry_from_path(dp.paths[1]);
-	__cio_printf("PARENT %s FOUND FROM %s\n", parent->filename, dp.dirs[0]);
-	__cio_printf("CHILD %s FOUND FROM %s\n", child->filename, dp.paths[1]);
-	__cio_printf("CHILD %s FOUND FROM %s\n", child->filename, dp.paths[0]);
-	print_parsed_path(dp);
+	// pln();
+	// DirectoryEntry *child = _fs_find_entry_from_path(dp.paths[1]);
+	// __cio_printf("PARENT %s FOUND FROM %s\n", parent->filename, dp.dirs[0]);
+	// __cio_printf("CHILD %s FOUND FROM %s\n", child->filename, dp.paths[1]);
+	// __cio_printf("CHILD %s FOUND FROM %s\n", child->filename, dp.paths[0]);
+	// print_parsed_path(dp);
 	pl();
 	// if(child->)
 	int path_i = 1;
@@ -845,12 +912,58 @@ int _fs_create_entry_from_path(const char *path, EntryAttribute type){
 
 
 	*/
+	#ifdef DEBUG
+	__cio_printf("Creating (from path %s)!!!\n", path);
+	__delay(STEP);
+	#endif
 	return 0;
 }
 
+
+int create_subentry(DirectoryEntry *parent, const char *filename, EntryAttribute type) {
+	#ifdef DEBUG
+	__cio_printf("Creating subentry of %s...\n", parent->filename);
+	__delay(STEP);
+	#endif
+
+    // Check if the filename is valid
+    if (parent == NULL) {
+		__cio_printf("ERROR: Parent %s undefined\n", parent->filename);
+        return -1;
+    }
+
+	DirectoryEntry *child = _km_page_alloc(1);
+
+	_fs_initialize_directory_entry(child, filename, 0, DIRECTORY_ATTRIBUTE, 0, NULL);
+    // Initialize the entry
+    // __strcpy(child->filename, filename);
+    // child->type = type;
+    // child->size = 0; // Initialize size to 0 for directories
+	// child->cluster = 0;
+
+	pln();
+	int result = add_sub_entry(parent, child);
+	if(result == 0){
+		__cio_printf("Successfully make sub entry\n");
+	}
+	else{
+		__cio_printf("Failed to make sub entry\n");
+	}
+
+	// TODO SEAN: need to add FAT entry
+
+	#ifdef DEBUG
+	__cio_printf("Creating file %s!!!\n", filename);
+	__delay(STEP);
+	#endif
+    return 0;
+
+}
+
+
 int _fs_create_root_entry(const char *filename, EntryAttribute type) {
 	#ifdef DEBUG
-	__cio_printf("Creating...\n");
+	__cio_printf("Creating file %s...\n", filename);
 	__delay(STEP);
 	#endif
 
@@ -883,20 +996,50 @@ int _fs_create_root_entry(const char *filename, EntryAttribute type) {
     // Create an entry for the file or directory
     DirectoryEntry *new_entry = &fs.root_directory[empty_slot_index];
 
-    // Initialize the entry
-    __strcpy(new_entry->filename, filename);
-    new_entry->type = type;
-    new_entry->size = 0; // Initialize size to 0 for directories
-	new_entry->cluster = 0;
-	// new_entry->cluster = fs.disk.write(new_entry, sizeof(DirectoryEntry));
+	pln();
+	__cio_printf("BOUTTA INITIALIZE THEN PRINT\n");
+	__delay(SHORT_PAUSE);
+	_fs_initialize_directory_entry(new_entry, filename, 0, DIRECTORY_ATTRIBUTE, 0, NULL);
+	_fs_print_entry(new_entry);
+	
+	__cio_printf("THERE IT WAS\n");
+	__delay(SHORT_PAUSE);
 	
 	// TODO SEAN: need to add FAT entry
 
 	#ifdef DEBUG
-	__cio_printf("Creating!!!\n");
+	__cio_printf("Creating file %s!!!\n", filename);
 	__delay(STEP);
 	#endif
     return 0;
+}
+
+// Function to initialize a DirectoryEntry with zeroed out subdirectory
+void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryAttribute type, uint32_t cluster, DirectoryEntry *next) {
+    if (entry == NULL) {
+        // Handle error
+        return;
+    }
+
+    // Copy filename
+    if (filename != NULL) {
+        int i;
+        for (i = 0; filename[i] != '\0' && i < MAX_FILENAME_LENGTH; i++) {
+            entry->filename[i] = filename[i];
+        }
+        entry->filename[i] = '\0'; // Null-terminate string
+    } else {
+        entry->filename[0] = '\0'; // Empty filename
+    }
+
+    entry->size = size;
+    entry->type = type;
+    entry->cluster = cluster;
+    entry->next = next;
+
+    // Zero out the subdirectory field
+    entry->subdirectory->name[0] = '\0'; // Empty directory name
+    entry->subdirectory->num_files = 0; // No files in the directory
 }
 
 int _fs_rename_entry(const char *old_filename, const char *new_filename){
@@ -1048,17 +1191,22 @@ int _fs_close_file(const char *filename){
 	return 0;
 }
 
-int _fs_print_entry(const char *filename){
+int _fs_print_entry(DirectoryEntry *entry){
 	#ifdef DEBUG
 	__cio_printf("Printing...\n");
 	__delay(STEP);
 	#endif
 
-	DirectoryEntry *entry = _fs_find_root_entry(filename);
 	if(entry == NULL){
-		__cio_printf("ERROR: Entry \"%s\" not found\n", filename);
+		__cio_printf("ERROR: Entry not found\n");
 		return -1;
 	}
-	__cio_printf("This directory entry (type %d) has filename %s, size %d, at block %d.\n", entry->type, entry->filename, entry->size, entry->cluster);
+	__cio_printf("This %s has filename %s, size %d, at block %d.\n", entry->type == 1 ? "file" : "directory", entry->filename, entry->size, entry->cluster);
+	__cio_printf("Printing children...\n");
+	__cio_printf("Here is a number, %d\n", entry->subdirectory->num_files);
+	for(int i = 0; i < entry->subdirectory->num_files; i++){
+		__delay(MOMENT);
+		__cio_printf("This file: %s\n", entry->subdirectory->files[i].filename);
+	}
 	return 0;
 }
