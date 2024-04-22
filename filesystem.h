@@ -49,7 +49,7 @@ typedef struct {
 	char path[MAX_PATH_LENGTH];
     char *paths[MAX_FILENAME_LENGTH];  // Array to store path entries
     char *dirs[MAX_FILENAME_LENGTH];  // Array to store directory names
-    char file_name[MAX_FILENAME_LENGTH];  // String to store file name
+    char filename[MAX_FILENAME_LENGTH];  // String to store file name
     int num_dirs;  // Number of directory names
 } DeconstructedPath;
 
@@ -204,7 +204,7 @@ int _fs_mount(void);
  ** @param filename of the file to find.
  ** @return DirectoryEntry with filename in root
  */
-DirectoryEntry *_fs_find_entry(const char *filename);
+DirectoryEntry *_fs_find_root_entry(const char *filename);
 
 /*
  ** Find a DirectoryEntry
