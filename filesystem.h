@@ -204,7 +204,7 @@ int _fs_mount(void);
  ** @param filename of the file to find.
  ** @return DirectoryEntry with filename in root
  */
-DirectoryEntry *_fs_find_root_entry(const char *filename);
+DirectoryEntry *_fs_find_entry(const char *filename);
 
 /*
  ** Find a DirectoryEntry
@@ -234,11 +234,11 @@ int _fs_read_file(const char *filename/*, void *buffer, size_t size, off_t offse
 int _fs_write_file(const char *path, const void *data/*, size_t size, off_t offset*/);
 
 /*
- ** Create a new file in the filesystem.
+ ** Create a new file in the root of filesystem.
  ** @param filename Name of the file to create.
  ** @return 0 on success, -1 on failure.
  */
-int _fs_create_root_entry(const char *filename, EntryAttribute type);
+int _fs_create_entry(const char *filename, EntryAttribute type);
 
 /*
  ** Create a new file in the filesystem.
@@ -283,7 +283,7 @@ int _fs_close_file(const char *filename);
  ** @param filename of the file to print.
  ** @return 0 on success, -1 on failure.
  */
-int _fs_print_entry(DirectoryEntry *entry);
+int _fs_print_entry(DirectoryEntry *entry, bool_t recursive);
 
 /*
  ** Set the permissions of a file in the filesystem.

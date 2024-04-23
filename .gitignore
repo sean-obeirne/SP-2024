@@ -9,3 +9,6 @@ prog.nl
 offsets.h
 *.swp
 .vscode
+kernel.c
+kdefs.h
+users.h
