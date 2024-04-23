@@ -8,16 +8,6 @@
 #define RAMDISK_PAGES 16
 #define RAMDISK_SIZE (RAMDISK_PAGES * SZ_PAGE)
 
-// Print general debugging info, such as current operation or success status
-////////////////
-#define DEBUG
-////////////////
-#define STEP 1
-#define MOMENT 20
-#define DEBUG_DELAY 100
-#define SHORT_PAUSE 200
-#define LONG_PAUSE 1000
-#define INF_PAUSE 10000000
 
 // Define the storage interface functions for portability
 typedef struct {
