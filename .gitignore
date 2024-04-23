@@ -12,3 +12,4 @@ offsets.h
 kernel.c
 kdefs.h
 users.h
+bootstrap.s
