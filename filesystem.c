@@ -167,8 +167,6 @@ void dump_fat( void ) {
     }
 }
 
-
-// read block block_number to fs.buffer
 int read_block(int block_number){ // TODO SEAN chunks
 	if (block_number < 0 || block_number >= DISK_SIZE) {
 		__cio_printf("ERROR: Block number %d not within bounds %d - %d\n", block_number, 0, DISK_SIZE);
@@ -617,22 +615,6 @@ int _fs_mount( void ) {
 
 	// Implement FAT32 mounting logic here
 	return 0;
-}
-
-DirectoryEntry *get_dir_entry_from_path(const char *path){
-	#ifdef DEBUG
-	__cio_printf("Getting dir (from path %s)...\n", path);
-	__delay(STEP);
-	#endif
-
-	//path = /dir/subdir/file.txt
-	// start at root
-	// DirectoryEntry *entry = &fs.root_directory[0];
-	// go to dir
-	// go to subdir
-	// go to file.txt
-	// return file.txt
-	return NULL;
 }
 
 DirectoryEntry *_fs_find_entry_from_path(const char *path) {
@@ -1122,24 +1104,6 @@ int _fs_create_root_entry(const char *filename, EntryAttribute type) {
     return 0; // Success
 }
 
-
-/*
-int _fs_create_root_entry2(const char *filename, EntryAttribute type) {
-	int result = add_sub_entry(_fs_find_entry("/"), new_entry);
-	if (result != 0){
-		__cio_printf("Failed to add sub entry %s to %s\n", new_entry->filename, _fs_find_entry("/"));
-		return -1;
-	}
-	// TODO SEAN: need to add FAT entry
-
-	#ifdef DEBUG
-	__cio_printf(" Creating a root entry %s!!!\n", filename);
-	__delay(STEP);
-	#endif
-    return 0;
-}
-*/
-
 void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryAttribute type, uint32_t cluster, DirectoryEntry *next) {
     #ifdef DEBUG
     __cio_printf("Initializing entry %s...\n", filename);
@@ -1183,43 +1147,7 @@ void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename,
     __delay(STEP);
     #endif
 }
-/*
-// Function to initialize a DirectoryEntry with zeroed out subdirectory
-void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryAttribute type, uint32_t cluster, DirectoryEntry *next) {
-	#ifdef DEBUG
-	__cio_printf("Initializing entry %s...\n", filename);
-	__delay(STEP);
-	#endif
-    if (entry == NULL) {
-        // Handle error
-        return;
-    }
 
-    // Copy filename
-    if (filename != NULL) {
-        int i;
-        for (i = 0; filename[i] != '\0' && i < MAX_FILENAME_LENGTH; i++) {
-            entry->filename[i] = filename[i];
-        }
-        entry->filename[i] = '\0'; // Null-terminate string
-    } else {
-        entry->filename[0] = '\0'; // Empty filename
-    }
-
-    entry->size = size;
-    entry->type = type;
-    entry->cluster = cluster;
-    entry->next = next;
-
-    // Zero out the subdirectory field
-    entry->subdirectory->name[0] = '\0'; // Empty directory name
-    entry->subdirectory->num_files = 0; // No files in the directory
-	#ifdef DEBUG
-	__cio_printf("Initializing entry %s!!!\n", filename);
-	__delay(STEP);
-	#endif
-}
-*/
 int _fs_rename_entry(const char *old_filename, const char *new_filename){
 	#ifdef DEBUG
 	__cio_printf("Renaming...\n");
