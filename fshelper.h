@@ -9,14 +9,15 @@
 // Define constants, macros, and data structures specific to FAT32 filesystem
 // Print general debugging info, such as current operation or success status
 ////////////////
-#define DEBUG
+// #define DEBUG
 ////////////////
 
 
 // Pause time definitions
-#define SLEEP_FACTOR 10
-#define STEP 1 * SLEEP_FACTOR
-#define MOMENT 5 * SLEEP_FACTOR
+#define SLEEP_FACTOR 12
+#define STEP 1
+#define CSTEP 1 * SLEEP_FACTOR
+#define MOMENT 3 * SLEEP_FACTOR
 #define SHORT_PAUSE 20 * SLEEP_FACTOR
 #define DEBUG_DELAY 50 * SLEEP_FACTOR
 #define LONG_PAUSE 100 * SLEEP_FACTOR
@@ -25,7 +26,7 @@
 // Print general debugging info, such as current operation or success status
 // #define DEBUG
 
-void phn(const char *header);
+void phn(const char *header, int ticks);
 void ph(const char *header);
 void pl(void);
 void pln(void);
