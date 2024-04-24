@@ -11,8 +11,10 @@
 ////////////////
 #define DEBUG
 ////////////////
+
+
 // Pause time definitions
-#define SLEEP_FACTOR 2
+#define SLEEP_FACTOR 10
 #define STEP 1 * SLEEP_FACTOR
 #define MOMENT 5 * SLEEP_FACTOR
 #define SHORT_PAUSE 20 * SLEEP_FACTOR

@@ -483,6 +483,9 @@ int list_dir_contents(const char *path) {
 	return 0;
 }
 
+#ifndef DEBUG
+	#define DEBUG
+#endif
 
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
@@ -616,7 +619,9 @@ int _fs_mount( void ) {
 	// Implement FAT32 mounting logic here
 	return 0;
 }
-
+#ifdef DEBUG
+	#undef DEBUG
+#endif
 DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 	#ifdef DEBUG
 	__cio_printf("  Finding (from path %s)...\n", path);
@@ -732,9 +737,7 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 }
 
 DirectoryEntry *_fs_find_entry(const char *filename) {
-	// __cio_printf("Finding in root, filename is %s\n", filename);
 	if (__strcmp("/", filename) == 0){
-		__cio_printf("asked for root via filename %s\n", filename);
 		return &root_directory_entry;
 	}
 	if (filename[0] == '/'){
@@ -855,14 +858,8 @@ int _fs_create_entry_from_path(const char *path, EntryAttribute type){
 		__delay(MOMENT);
 		parent = _fs_find_entry(dp.dirs[1]);
 		__cio_printf("Looking for child at %s\n", dp.paths[2]);
-		#ifdef DEBUG
-		#undef DEBUG
 		__cio_printf("...skipping debugging...\n");
 		child = _fs_find_entry_from_path(dp.paths[2]);
-		#ifndef DEBUG
-		#define DEBUG
-		#endif
-		#endif
 		if(child == NULL){
 			_fs_initialize_directory_entry(child, dp.dirs[2], 0, DIRECTORY_ATTRIBUTE, 0, NULL);
 			// _fs_print_entry(child);
@@ -1040,7 +1037,6 @@ int _fs_create_entry_from_path(const char *path, EntryAttribute type){
 	return 0;
 }
 
-// Function to add a directory entry to the root directory
 int _fs_create_root_entry(const char *filename, EntryAttribute type) {
 	#ifdef DEBUG
 	__cio_printf(" Creating a root entry %s...\n", filename);
@@ -1104,13 +1100,14 @@ int _fs_create_root_entry(const char *filename, EntryAttribute type) {
     return 0; // Success
 }
 
+
 void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryAttribute type, uint32_t cluster, DirectoryEntry *next) {
     #ifdef DEBUG
     __cio_printf("Initializing entry %s...\n", filename);
     __delay(STEP);
     #endif
     if (entry == NULL) {
-        // Handle error
+        __cio_printf("NULL entry found\n");
         return;
     }
 
@@ -1316,6 +1313,7 @@ int _fs_print_children(DirectoryEntry *entry){
 	__cio_printf("Printing %d children!!!\n", entry->subdirectory->num_files);
 	__delay(STEP);
 	#endif
+	return num_files;
 }
 
 int _fs_print_entry(DirectoryEntry *entry, bool_t print_children){
