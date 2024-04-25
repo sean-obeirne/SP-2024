@@ -3,27 +3,13 @@
 
 #include "common.h"
 #include "ramdisk.h"
+#include "fshelper.h"
 
 // Define constants, macros, and data structures specific to FAT32 filesystem
-// Constants for FAT32 filesystem
-#define MAX_FAT_ENTRIES 20
-#define FAT_EOC 0xFFFF
-#define FAT_FREE 0x0
-#define FAT_IN_USE 0x1
-#define DISK_SIZE 16 // disk is this many blocks
-#define BLOCK_SIZE 4096 // TODO SEAN: make this pull from somewhere
-#define TOTAL_SIZE (DISK_SIZE * BLOCK_SIZE)
-#define SECTOR_SIZE 512 // 8 sectors = 1 block
-#define ROOT_DIRECTORY_ENTRIES 32
-// #define ROOT_DIRECTORY_ENTRIES 4
-#define MAX_FILENAME_LENGTH 255
-#define MAX_PATH_LENGTH 1023
-#define MAX_DEPTH 16
-#define FS_BUFFER_SIZE 4096
 // #define ROOT_LEN 512 // how many files can be in root?
 
 
-typedef enum {
+typedef enum EntryAttribute {
     FILE_ATTRIBUTE = 0x01,      // Attribute for files
     DIRECTORY_ATTRIBUTE = 0x02  // Attribute for directories
 } EntryAttribute;
@@ -36,6 +22,7 @@ typedef struct DirectoryEntry {
     uint32_t cluster;                         // Starting cluster of the file's data
     struct DirectoryEntry *next;              // Pointer to the next directory entry in the linked list
     struct Directory *subdirectory;           // Pointer to the subdirectory (if it's a directory)
+	uint8_t depth;
 } DirectoryEntry;
 
 typedef struct Directory {
@@ -45,7 +32,7 @@ typedef struct Directory {
     // Add any other metadata or properties you need for directories
 } Directory;
 
-typedef struct {
+typedef struct DeconstructedPath {
 	char path[MAX_PATH_LENGTH];
     char *paths[MAX_FILENAME_LENGTH];  // Array to store path entries
     char *dirs[MAX_FILENAME_LENGTH];  // Array to store directory names
@@ -53,7 +40,7 @@ typedef struct {
     int num_dirs;  // Number of directory names
 } DeconstructedPath;
 
-typedef struct {
+typedef struct FATEntry {
 	uint32_t next_cluster;
 	uint8_t status;
 } FATEntry;
@@ -63,7 +50,7 @@ typedef struct FAT {
 									   // Additional fields or metadata related to the FAT table
 } FAT;
 
-typedef struct {
+typedef struct FileSystem {
 	// Define your filesystem structures here
 	// e.g., directory entry structure, FAT entry structure, etc.
 	// Boot Sector Information
@@ -283,7 +270,7 @@ int _fs_close_file(const char *filename);
  ** @param filename of the file to print.
  ** @return 0 on success, -1 on failure.
  */
-int _fs_print_entry(DirectoryEntry *entry, bool_t recursive);
+int _fs_print_entry(DirectoryEntry *entry, bool_t print_children);
 
 /*
  ** Set the permissions of a file in the filesystem.
@@ -294,7 +281,7 @@ int _fs_print_entry(DirectoryEntry *entry, bool_t recursive);
 // int _fs_set_permissions(const char *filename, mode_t permissions);
 
 
-void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryAttribute type, uint32_t cluster, DirectoryEntry *next);
+void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryAttribute type, uint32_t cluster, DirectoryEntry *next, uint8_t depth);
 
 // Add more function prototypes as needed for your FAT32 filesystem implementation
 
