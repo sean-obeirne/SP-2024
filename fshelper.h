@@ -9,13 +9,14 @@
 // Define constants, macros, and data structures specific to FAT32 filesystem
 // Print general debugging info, such as current operation or success status
 ////////////////
-// #define DEBUG
+#define DEBUG
 ////////////////
 
 
 // Pause time definitions
-#define SLEEP_FACTOR 12
+#define SLEEP_FACTOR 15
 #define STEP 1
+#define FIVER 5
 #define CSTEP 1 * SLEEP_FACTOR
 #define MOMENT 3 * SLEEP_FACTOR
 #define SHORT_PAUSE 20 * SLEEP_FACTOR
