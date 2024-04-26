@@ -79,6 +79,7 @@ void dump_fat(void);
 
 void get_path( void );
 void parse_input(int in_len); // from buffer
+void run_command(char **args, int word_count);
 
 char *strip_path(const char *path);
 void merge_paths(char *path, DeconstructedPath *merge_path);
