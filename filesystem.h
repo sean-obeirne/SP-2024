@@ -26,7 +26,6 @@ typedef struct DirectoryEntry {
 } DirectoryEntry;
 
 typedef struct Directory {
-    char name[MAX_FILENAME_LENGTH]; // Name of the directory
     DirectoryEntry *files[ROOT_DIRECTORY_ENTRIES]; // Array of directory entries (files)
     uint32_t num_files; // Number of files in the directory
     // Add any other metadata or properties you need for directories
@@ -123,9 +122,10 @@ int close_dir(Directory *dir);
 /*
 ** List Directory Contents
 ** @param dir Pointer to the Directory structure.
+** @param box to set if you would like a box for output
 ** @return 0 on success, -1 on failure.
 */
-int list_dir_contents(const char *dir_name);
+int list_dir_contents(const char *dir_name, bool_t box);
 
 /*
 ** Change Directory

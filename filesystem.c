@@ -14,7 +14,6 @@ static char *cwd = "/";
 static char working_path[MAX_PATH_LENGTH];
 
 Directory root_directory = {
-    .name = "/",  // Root directory name
 	.num_files = 0,
 };
 
@@ -32,6 +31,22 @@ DirectoryEntry root_directory_entry = {
 /*
 ** HELPER FUNCTIONS
 */
+
+// Print the header for the whole filesystem application.
+int print_header_info(bool_t horrizontal){
+	int len;
+	if(horrizontal){
+		len = __strlen("9 = Directory  7 = File");
+		__cio_printf_at(80-len, 0, "%c = Directory  %c = File", 9, 7);
+		
+	}
+	else{
+		len = __strlen("9 = Directory");
+		__cio_printf_at(80-len, 0, "%c = Directory", 9);
+		len = __strlen("7 = File");
+		__cio_printf_at(80-len, 1, "%c = File", 7);
+	}
+}
 
 // Print a header for a module with no delay
 void phn(const char *text, int ticks) {
@@ -61,7 +76,16 @@ void pl() {
 	__delay(INF_PAUSE);
 }
 
-// Print an 80-character long line with '-', no delay
+// Print an 80-character long line with '-', no delay, only if DEBUG is on
+void pl_debug() {
+	#ifdef DEBUG
+	for(int i = 0; i < 80; i++){
+		__cio_putchar('-');
+	}
+	#endif
+}
+
+// Force-print an 80-character long line with '-', no delay
 void pln() {
 	for(int i = 0; i < 80; i++){
 		__cio_putchar('-');
@@ -103,13 +127,16 @@ void phl( const char * header ){
 // Print header, then print variable length line
 void pvl( const char *header, char line_char, int indent ){
 	if(header == NULL){
-		__cio_printf("ERROR: Cannot print header, header is null\n");
+		__cio_printf("ERROR: Cannot print header, header is NULL\n");
 		return;
 	}
 	if(line_char == NULL){
 		line_char = '-';
 	}
 	// Print header
+	for(int i = 0; i < indent; i++){
+		__cio_putchar(' ');
+	}
 	__cio_puts(header);
 	if (header[__strlen(header)-1] != '\n'){
 		__cio_putchar('\n');
@@ -129,8 +156,19 @@ void pvl( const char *header, char line_char, int indent ){
 }
 
 void print_chars(){
-	for(int i = 0; i < 256; i++){
-		__cio_printf("$d:%c", i, i);
+	for(uint8_t i = 0; i <= MAX_ASCII_CHAR; i++){
+		if (10 < i && i < 14){
+			continue;
+		}
+		if(i == 10){
+			__cio_printf("%d:%s  ", i, "\\n");
+		}
+		else{
+			__cio_printf("%d:%c  ", i, i);
+		}
+		if(i % 10 == 0 || i == MAX_ASCII_CHAR){
+			__cio_putchar('\n');
+		}
 	}
 }
 
@@ -146,9 +184,18 @@ void clear_fs_buffer( void ) {
 int dump_fs_buffer( void ){
 	pvl("Dumping Buffer:\n", '-', 0);
 	__delay(STEP);
-	__cio_printf("%s\n", (char *)fs.buffer);
+	__cio_printf("  DUMP: %s\n", (char *)fs.buffer);
 	__delay(STEP);
 	return 0;
+}
+
+// print buffer
+void pb( void ){
+	__cio_puts(fs.buffer);
+}
+// dump root
+void dr(){
+	_fs_print_entry(_fs_find_entry("/"), true);
 }
 
 void dump_fat( void ) {
@@ -427,11 +474,10 @@ int dir_contains(DirectoryEntry *parent, const char *target){
 	return -1;
 }
 
-///////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////
-////////////////////DIRECTORY FUNCTIONS////////////////////////
-///////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////
+
+/////////////////////////
+// DIRECTORY FUNCTIONS //
+/////////////////////////
 
 int cd(const char *relpath){
 	return 0;
@@ -457,34 +503,124 @@ int close_dir(Directory *dir) {
     return 0;
 }
 
-int list_dir_contents(const char *path) {
+// Pass just a string, creates a box for it
+void box_h(int max_item_size){
+	__cio_putchar('+');
+	for(int i = 1; i <= max_item_size; i++){
+		__cio_putchar('-');
+	}
+	__cio_putchar('+');
+	__cio_putchar('\n');
+}
+
+void box_v(char *to_print){
+
+}
+
+void box_pad_right(int longest_line){
+	int i = __strlen(fs.buffer);
+	int num = longest_line - __strlen(fs.buffer);
+	__cio_printf("%s", fs.buffer);
+	for (i = 0; i <= num; i++){
+		__cio_putchar(' ');
+	}
+	__cio_putchar('|');
+	__cio_putchar('\n');
+}
+
+int list_dir_contents(const char *path, bool_t box) { //TODO make this more line print_entry()
 	#ifdef DEBUG
-	__cio_printf("Listing...\n");
+	__cio_printf("Listing %s...\n", path);
 	__delay(STEP);
 	#endif
 
-	DirectoryEntry *entry = _fs_find_entry(path);
+	if (path[0] != '/'){
+		__cio_printf("ERROR: Please use absolute path to list dir content.\n");
+		return -1;
+	}
+
+	DirectoryEntry *entry = _fs_find_entry_from_path(path);
+	if (entry == NULL){
+		__cio_printf("ERROR: Finding %s returned NULL value\n", path);
+		return -1;
+	}
+
 	Directory *dir = (Directory *)entry->subdirectory;
-	phl(NULL);
-	__cio_printf(" Contents of %s \"%s\":\n", entry->type == 1 ? "file": "directory", entry->filename);
+	if (dir == NULL){
+		__cio_printf("ERROR: Failed to find valid Directory at %s\n", path);
+		return -1;
+	}
+
 	if (entry->type == 1){
 		__cio_printf("ERROR: %s is a *file*; cannot list directory contents", entry->filename);
 		return -1;
 	}
+
+	if(box){
+		__sprint(fs.buffer, "| Directory: %s", path);
+		int len = __strlen(fs.buffer);
+		int longest_line = __strlen(fs.buffer);
+		for (int i = 0; i < dir->num_files; i++) {
+			len = __strlen(dir->files[i]->filename);
+			if (len > longest_line){
+				longest_line = len;
+			}
+			// __cio_printf("|    %c %s |\n", entry->type == 1 ? FILLED_CIRCLE : OPEN_CIRCLE, dir->files[i]->filename); //TODO SEAN expand the info here
+		}	
+		box_h(longest_line);
+		box_pad_right(longest_line);
+		box_h(longest_line);
+		clear_fs_buffer();
+		for (int i = 0; i < dir->num_files; i++) {
+			__sprint(fs.buffer, "|    %c %s", entry->type == 1 ? FILLED_CIRCLE : OPEN_CIRCLE, dir->files[i]->filename); //TODO SEAN expand the info here
+			box_pad_right(longest_line);
+			// __cio_printf("|    %c %s |\n", entry->type == 1 ? FILLED_CIRCLE : OPEN_CIRCLE, dir->files[i]->filename); //TODO SEAN expand the info here
+			clear_fs_buffer();
+		}
+		box_h(longest_line);
+	} else{
+		__cio_putchar('\n');
+		clear_fs_buffer();
+		__sprint(fs.buffer, "Directory: %s\n", entry->filename);
+		pb();
+		for(int i = 0; i < entry->depth; i++){
+			__cio_putchar(' ');
+		}
+		for(int i = 0; i < entry->subdirectory->num_files; i++){
+			clear_fs_buffer();
+			__sprint(fs.buffer, "  %c %s\n", entry->type == 1 ? FILLED_CIRCLE : OPEN_CIRCLE, dir->files[i]->filename); //TODO SEAN expand the info here
+			pb();
+		}
+		__cio_putchar('\n');
+
+		// pvl(fs.buffer, '-', 1); // do this or the line below
+		// __cio_printf("%s\n", header);
+	}
+	
+#if 0
 	// Print directory contents
 	for (uint32_t i = 0; i < dir->num_files; i++) {
-		__cio_printf("  -> %s: %s\n", dir->files[i]->filename, dir->files[i]->type == 1 ? "file": "directory"); //TODO SEAN expand the info here
+		len = __strlen(dir->files[i]->filename);
+		if (len > longest_line){
+			longest_line = len;
+		}
+		// __cio_printf("|    %c %s |\n", entry->type == 1 ? FILLED_CIRCLE : OPEN_CIRCLE, dir->files[i]->filename); //TODO SEAN expand the info here
+		__sprint(fs.buffer, "|    %c %s |\n", entry->type == 1 ? FILLED_CIRCLE : OPEN_CIRCLE, dir->files[i]->filename); //TODO SEAN expand the info here
+		box_pad_right(longest_line);
 	}
+#endif
+
+	#ifdef DEBUG
+	__cio_printf("Listing %s!!!\n", path);
+	__delay(STEP);
+	#endif
 	return 0;
 }
 
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
-//////////////////////FILE SYSTEM//////////////////////////
-///////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////
+//////////////////////////
+// FILESYSTEM FUNCTIONS //
+//////////////////////////
 
-/* FILESYSTEM OPERATIONS */
 int _fs_init( void ) {
 	#ifdef DEBUG
 	__cio_printf("Initializing Filesystem\n");
@@ -643,7 +779,6 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 	else if(dp.num_dirs == 2){
 		parent = _fs_find_entry(dp.dirs[0]);
 		child = _fs_find_entry(dp.dirs[1]);
-		__cio_printf("dp.dirs[1] = %s\n", dp.dirs[1]);
 		if (parent == NULL){
 			// __cio_printf(" _fs_find_entry_from_path(%s) failed:\n   Parent %s not found\n", path, dp.dirs[0]);
 			#ifdef DEBUG
@@ -689,11 +824,14 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 			return NULL;
 		}
 	}
-#if 0
+#if 1
 	else if (dp.num_dirs >= 4){
 		parent = _fs_find_entry_from_path(dp.paths[2]);
 		if (parent == NULL){
-			__cio_printf("ERROR: Parent %s not found at path %s\n", dp.dirs[2], dp.paths[2]);
+			#ifdef DEBUG
+			__cio_printf("  Finding (from path %s)---\n", path);
+			__delay(STEP);
+			#endif
 			return NULL;
 		}
 		__cio_printf("Looking for child at %s\n", dp.paths[3]);
@@ -883,13 +1021,44 @@ int _fs_create_entry_from_path(const char *path, EntryAttribute type){
 			_fs_initialize_directory_entry(child, dp.dirs[2], 0, DIRECTORY_ATTRIBUTE, 0, NULL, parent->depth+1);
 			add_sub_entry(parent, child);
 		}
+	}
 
+#if 1
+	else if (dp.num_dirs >= 4){
+		parent = _fs_find_entry_from_path(dp.paths[dp.num_dirs - 2]); // starts at index 2 for nd=4
+		while(parent == NULL){
+			#ifdef DEBUG
+			__cio_printf("Entry %s does not already exist in root, creating...\n", dp.dirs[dp.num_dirs - 2]);
+			#endif
+			result = _fs_create_entry_from_path(dp.paths[2], DIRECTORY_ATTRIBUTE);
+			if (result == -1){
+				__cio_printf("ERROR: Unable to create directory %s\n", dp.dirs[2]);
+			}
+			dr();
+			pl();
+			parent = _fs_find_entry(dp.dirs[1]);
+			if(parent == NULL){
+				__cio_printf("ERROR: Could not find newly created dir %s\n", dp.dirs[1]);
+			}
+			__cio_printf("ERROR: Parent %s not found at path %s\n", dp.dirs[2], dp.paths[2]);
+			return NULL;
+		}
+		__cio_printf("Looking for child at %s\n", dp.paths[3]);
+		child = NULL;
+		for(int i = 0; i < parent->subdirectory->num_files; i++){
+			if (__strcmp(parent->subdirectory->files[i]->filename, dp.dirs[2]) == 0 ){ // found child!
+				child = parent->subdirectory->files[i];
+			}
+		}
 		if(child == NULL){
-			// create_sub_entry(parent, dp.dirs[2], DIRECTORY_ATTRIBUTE);
-			child = _fs_find_entry_from_path(dp.paths[2]);
-			// _fs_create_entry_from_path(path, DIRECTORY_ATTRIBUTE)
+			#ifdef DEBUG
+			__cio_printf("  Finding (from path %s)---\n", path);
+			__delay(STEP);
+			#endif
+			return NULL;
 		}
 	}
+#endif
 
 	#ifdef DEBUG
 	__cio_printf("  Creating (from path %s)!!!\n", path);
@@ -946,7 +1115,7 @@ int _fs_create_entry_from_path(const char *path, EntryAttribute type){
 
 
 
-	/*
+#if 0
 	DirectoryEntry *curr_parent_dir_entry = &fs.root_directory[0];
 	strip_path(dirs[0], fs.buffer);
 	__cio_printf("CURRENT STRIPPED ITEM: %s\n", fs.buffer);
@@ -1028,9 +1197,8 @@ int _fs_create_entry_from_path(const char *path, EntryAttribute type){
 	// fs.root_directory[empty_slot_index].size = 0; // Set size to 0 initially
 	// fs.root_directory[empty_slot_index].cluster = empty_slot_index;
 	__cio_printf("Successfully created DirectoryEntry %s, a %s created at block %d\n", fs.root_directory[empty_slot_index].filename, fs.root_directory[empty_slot_index].type == 1 ? "file" : "dir", fs.root_directory[empty_slot_index].cluster);
+#endif
 
-
-	*/
 	#ifdef DEBUG
 	__cio_printf("Creating (from path %s)!!!\n", path);
 	__delay(STEP);
@@ -1126,7 +1294,6 @@ void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename,
     }
 
     // Initialize the subdirectory
-    entry->subdirectory->name[0] = '\0'; // Empty directory name
     entry->subdirectory->num_files = 0; // No files in the directory
 
     #ifdef DEBUG
@@ -1303,8 +1470,6 @@ int _fs_print_children(DirectoryEntry *entry){
 			__cio_printf(" (%d bytes)");
 		}
 		 _fs_print_children(child);
-		
-		// _fs_print_children(child); //TODO: make recursive
 	}
 	// #ifdef DEBUG
 	// __cio_printf("Printing %d children!!!\n", entry->subdirectory->num_files);
@@ -1323,16 +1488,17 @@ int _fs_print_entry(DirectoryEntry *entry, bool_t print_children){
 		__cio_printf("ERROR: Entry %s is NULL\n", entry->filename);
 		return -1;
 	}
+	int linenum = 0;
 	if(entry->type == DIRECTORY_ATTRIBUTE){
 		char *header = _km_page_alloc(1);
 		__memclr(header, BLOCK_SIZE);
 		__strcat(header, "Directory: ");
 		__strcat(header, entry->filename);
-		for(int i = 0; i < (entry->depth) + 1; i++){
+		for(int i = 0; i < entry->depth; i++){
 			__cio_putchar(' ');
 		}
-		// pvl(header, '-', 1); do this or the line below
-		__cio_printf("%s\n", header);
+		pvl(header, '-', 1); // do this or the line below
+		// __cio_printf("%s\n", header);
 		if(print_children){
 			_fs_print_children(entry);
 		}

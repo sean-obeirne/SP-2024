@@ -40,6 +40,7 @@
 #define INF_PAUSE 1000000 * SLEEP_FACTOR
 
 // Useful ASCII codes
+#define MAX_ASCII_CHAR 127 // 128+ seems invalid
 #define FILLED_CIRCLE 7
 #define OPEN_CIRCLE 9
 
@@ -49,22 +50,26 @@ typedef enum EntryAttribute EntryAttribute;
 
 
 
-// Print general debugging info, such as current operation or success status
-// #define DEBUG
 
+int print_header_info(bool_t horrizontal);
 void phn(const char *header, int ticks);
 void ph(const char *header);
 void pl(void);
+void pl_debug(void);
 void pln(void);
 void plw(char line_char);
 void plh(const char *header, char line_char);
 void phl(const char *header);
 void pvl(const char *header, char line_char, int indent);
+void box_h(int max_item_size);
+void box_v(char *to_print);
+void box_pad_right(int longest_line);
 void print_chars(void);
 void init_fs_buffer(void);
 void clear_fs_buffer(void);
 int dump_fs_buffer(void);
-int dump_root(void);
+void pb(void);
+void dr(void);
 void dump_fat(void);
 char *strip_path(const char *path);
 void parse_path(const char *path, DeconstructedPath *dp);
