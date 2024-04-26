@@ -9,16 +9,21 @@
 // #define ROOT_LEN 512 // how many files can be in root?
 
 
-typedef enum EntryAttribute {
+typedef enum EntryType {
     FILE_ATTRIBUTE = 0x01,      // Attribute for files
     DIRECTORY_ATTRIBUTE = 0x02  // Attribute for directories
-} EntryAttribute;
+} EntryType;
+
+typedef enum PathType {
+    ABSOLUTE_PATH = 0x01, 	// Absolute path
+    RELATIVE_PATH = 0x02 	// Relative path
+} PathType;
 
 // Define DirectoryEntry structure
 typedef struct DirectoryEntry {
     char filename[MAX_FILENAME_LENGTH + 1];   // Name of the file or directory
     uint32_t size;                            // Size of the file in bytes
-    EntryAttribute type;                      // Attribute of the file (e.g., file or directory)
+    EntryType type;                      // Attribute of the file (e.g., file or directory)
     uint32_t cluster;                         // Starting cluster of the file's data
     struct DirectoryEntry *next;              // Pointer to the next directory entry in the linked list
     struct Directory *subdirectory;           // Pointer to the subdirectory (if it's a directory)
@@ -37,6 +42,7 @@ typedef struct DeconstructedPath {
     char *dirs[MAX_FILENAME_LENGTH];  // Array to store directory names
     char filename[MAX_FILENAME_LENGTH];  // String to store file name
     int num_dirs;  // Number of directory names
+	PathType path_type;
 } DeconstructedPath;
 
 typedef struct FATEntry {
@@ -82,6 +88,8 @@ typedef struct FileSystem {
 	// Cache or Buffer
 	void *buffer;
 
+	char cwd[MAX_PATH_LENGTH + 1];
+
 	// Mounted status
 	bool_t mounted;
 
@@ -91,6 +99,11 @@ typedef struct FileSystem {
 
 
 /*********DIRECTORUIES*********/
+/*
+** Print Working Directory
+*/
+void pwd( void );
+
 /*
 ** Create Directory
 ** @param path Path of the directory to create.
@@ -191,7 +204,7 @@ int _fs_mount(void);
  ** @param filename of the file to find.
  ** @return DirectoryEntry with filename in root
  */
-DirectoryEntry *_fs_find_entry(const char *filename);
+DirectoryEntry *_fs_find_root_entry(const char *filename);
 
 /*
  ** Find a DirectoryEntry
@@ -225,7 +238,7 @@ int _fs_write_file(const char *path, const void *data/*, size_t size, off_t offs
  ** @param filename Name of the file to create.
  ** @return 0 on success, -1 on failure.
  */
-int _fs_create_root_entry(const char *filename, EntryAttribute type);
+int _fs_create_root_entry(const char *filename, EntryType type);
 
 /*
  ** Create a new file in the filesystem.
@@ -233,7 +246,7 @@ int _fs_create_root_entry(const char *filename, EntryAttribute type);
  ** @param type Type of entry (1 == file, 2 == directory)
  ** @return 0 on success, -1 on failure.
  */
-int _fs_create_entry_from_path(const char *path, EntryAttribute type);
+int _fs_create_entry_from_path(const char *path, EntryType type);
 
 /*
  ** Delete a file from the filesystem.
@@ -281,7 +294,7 @@ int _fs_print_entry(DirectoryEntry *entry, bool_t print_children);
 // int _fs_set_permissions(const char *filename, mode_t permissions);
 
 
-void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryAttribute type, uint32_t cluster, DirectoryEntry *next, uint8_t depth);
+void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryType type, uint32_t cluster, DirectoryEntry *next, uint8_t depth);
 
 // Add more function prototypes as needed for your FAT32 filesystem implementation
 

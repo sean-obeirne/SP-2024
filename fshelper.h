@@ -7,10 +7,6 @@
 #include "ramdisk.h"
 
 // Define constants, macros, and data structures specific to FAT32 filesystem
-// Print general debugging info, such as current operation or success status
-////////////////
-#define DEBUG
-////////////////
 
 // Constants for FAT32 filesystem implementation
 #define MAX_FAT_ENTRIES 20
@@ -28,9 +24,13 @@
 #define MAX_DEPTH 16
 #define FS_BUFFER_SIZE 4096
 
+// Print debugging info, such as current operation or success status
+////////////////
+#define DEBUG
+////////////////
 // Pause time definitions
 #define SLEEP_FACTOR 3
-#define STEP 0
+#define STEP 1
 #define FIVER 5
 #define CSTEP 1 * SLEEP_FACTOR
 #define MOMENT 3 * SLEEP_FACTOR
@@ -46,12 +46,12 @@
 
 typedef struct DirectoryEntry DirectoryEntry;
 typedef struct DeconstructedPath DeconstructedPath;
-typedef enum EntryAttribute EntryAttribute;
+typedef enum EntryType EntryType;
 
 
 
 
-int print_header_info(bool_t horrizontal);
+void show_header_info(bool_t horrizontal);
 void phn(const char *header, int ticks);
 void ph(const char *header);
 void pl(void);
@@ -72,10 +72,11 @@ void pb(void);
 void dr(void);
 void dump_fat(void);
 char *strip_path(const char *path);
+void merge_paths(const char *path, DeconstructedPath *merge_path);
 void parse_path(const char *path, DeconstructedPath *dp);
 void test_parse_path(const char *path);
 void print_parsed_path(DeconstructedPath dp);
-int create_sub_entry(DirectoryEntry *parent, const char *filename, EntryAttribute type);
+int create_sub_entry(DirectoryEntry *parent, const char *filename, EntryType type);
 int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert);
 int add_fat_entry(uint32_t next_cluster);
 int get_subdirectory_count(DirectoryEntry *parent);
