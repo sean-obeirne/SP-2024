@@ -26,25 +26,108 @@ DirectoryEntry root_directory_entry = {
 	.depth = 0,
 };
 
+DeconstructedPath cwd = {
+	.path = "/",
+	.curr = 0,
+	.filename = "/",
+	.num_dirs = 0,
+	.path_type = ABSOLUTE_PATH,
+};
+
 /*
 ** HELPER FUNCTIONS
 */
 
+void adjust_cwd( DeconstructedPath *cwd, const char *path ){
+	parse_path(path, cwd);
+	print_parsed_path(*cwd);
+}
+
 // Print the header for the whole filesystem application.
 void show_header_info(bool_t horrizontal){
 	int len;
+
+	len = __strlen(fs.cwd);
+	__cio_puts_at(80-len, 0, fs.cwd);
+
 	if(horrizontal){
 		len = __strlen("9 = Directory  7 = File");
-		__cio_printf_at(80-len, 0, "%c = Directory  %c = File", 9, 7);
-		
+		__cio_printf_at(80-len, 1, "%c = Directory  %c = File", 9, 7);
 	}
 	else{
 		len = __strlen("9 = Directory");
-		__cio_printf_at(80-len, 0, "%c = Directory", 9);
+		__cio_printf_at(80-len, 1, "%c = Directory", 9);
 		len = __strlen("7 = File");
-		__cio_printf_at(80-len, 1, "%c = File", 7);
+		__cio_printf_at(80-len, 2, "%c = File", 7);
 	}
 }
+
+void get_path( void ){
+	#ifdef DEBUG
+	__cio_printf("Getting path...\n");
+	__delay(STEP);
+	#endif
+	
+	int start = __strlen(cwd.path) + 1;
+	__cio_printf("START: %d\n", start);
+	__cio_printf("%s: ", cwd.path);
+	clear_fs_buffer();
+	int in_len = __cio_gets(fs.buffer, 80 - start);
+	parse_input(in_len);
+
+	// dump_fs_buffer();
+	// dr();
+
+	#ifdef DEBUG
+	__cio_printf("Getting path!!!\n");
+	__delay(STEP);
+	#endif
+}
+
+
+
+void parse_input(int in_len){
+#if 1
+	char command_buffer[MAX_INPUT];
+	int buffer_i = 0;
+	char words[MAX_COMMANDS][MAX_INPUT];
+	int words_i = 0;
+
+	for (int i = 0; i < in_len - 1; i++) {
+        if (fs.buffer[i] == ' ' || fs.buffer[i] == '\n') {
+			command_buffer[buffer_i++] = '\0';
+			buffer_i = 0;
+			// words[words_i] = command_buffer;
+			// __cio_printf("Command buffer: %s\n", command_buffer);
+			// __cio_printf("Dest buffer: %s\n", words[words_i]);
+			__strcpy(words[words_i++], command_buffer);
+			__memclr(command_buffer, MAX_INPUT);
+        }
+		else{
+			command_buffer[buffer_i++] = fs.buffer[i];
+		}
+    }
+	command_buffer[buffer_i] = '\0'; // Null-terminate the last word
+    __memcpy(words[words_i], command_buffer, MAX_INPUT); // Copy the last word to words array
+	// __cio_printf("Command buffer: %s\n", command_buffer);
+	// __cio_printf("Dest buffer: %s\n", words[words_i]);
+	// __cio_printf("Idk but we are here %d\n", words_i);
+	for(int i = 0; i <= words_i; i++){
+		__cio_printf("%d: %s\n", i, words[i], words[i][0]);
+	}
+#endif
+
+#if 1
+	for(int i = 0; i < words_i; i++){
+		if(__strcmp(words[i], "cd") == 0){
+			__cio_printf("thats the good shit\n");
+			change_dir(words[i]);
+		}
+	}
+#endif
+}
+
+void run_command(const char *command);
 
 // Print a header for a module with no delay
 void phn(const char *text, int ticks) {
@@ -191,6 +274,7 @@ int dump_fs_buffer( void ){
 void pb( void ){
 	__cio_printf("buffer: %s\n", fs.buffer);
 }
+
 // dump root
 void dr(){
 	_fs_print_entry(_fs_find_root_entry("/"), true);
@@ -251,7 +335,7 @@ void cd_parent() {
 
     // Find the last occurrence of '/' character
     int i;
-    for (i = len - 2; i >= 0; i--) {
+    for (i = len - 1; i >= 0; i--) {
         if (fs.cwd[i] == '/') {
             break;
         }
@@ -263,15 +347,11 @@ void cd_parent() {
 		fs.cwd[j] = '\0';
 	}
 
-
-
-	clear_fs_buffer();
-	__strcpy(fs.buffer, fs.cwd);
-	fs.cwd;
-	__cio_printf("going up! old: %s  new: %s\n", fs.cwd, fs.cwd);
+	adjust_cwd(&cwd, fs.cwd);
+	// __cio_printf("going up! old: %s  new: %s\n", fs.cwd, fs.cwd);
 }
 
-void merge_paths(const char *path, DeconstructedPath *merge_path) {
+void merge_paths(char *path, DeconstructedPath *merge_path) {
 	#ifdef DEBUG
 	__cio_printf("Merging paths, cwd %s, and path %s...\n", fs.cwd, path);
 	__delay(STEP);
@@ -281,10 +361,8 @@ void merge_paths(const char *path, DeconstructedPath *merge_path) {
 	parse_path(path, &dp);
 	for(int i = 0; i < dp.num_dirs; i++){
 		__cio_printf(path);
-		__delay(100);
 		if(__strcmp(dp.dirs[i], "..") == 0){
 			cd_parent();
-			__cio_printf("PARENT\n");
 		}
 	}
 }
@@ -361,6 +439,7 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 		__strcpy(dp->paths[dir_names_i], scratch_path);
 		dp->num_dirs = dir_names_i + 1;
 		__strcpy(dp->filename, filename);
+		dp->curr = 0;
 	}
 
 	#ifdef DEBUG
@@ -550,7 +629,8 @@ int change_dir(const char *path){
 		merge_paths(dp.path, &dp);
 	}
 	
-	print_parsed_path(dp);
+	show_header_info(true);
+	// print_parsed_path(dp);
 
 
 	#ifdef DEBUG
@@ -1021,22 +1101,19 @@ int _fs_create_entry_from_path(const char *entry_path, EntryType type){
 	__cio_printf("  Creating (from path %s)...\n", entry_path);
 	__delay(STEP);
 	#endif
-	PathType pt = ABSOLUTE_PATH;
 	clear_fs_buffer();
 	__strcpy(fs.buffer, fs.cwd);
-	pb();
 	__strcat(fs.buffer, entry_path);
-	pb();
 	
 	int result = -1;
 	if(entry_path[0] != '/'){
 		#ifdef DEBUG
 		__cio_printf("Path is now relative\n");
 		#endif
-		pt = RELATIVE_PATH;
-		
 	}
-#if 0
+	char *path = _km_page_alloc(1);
+	__strcpy(path, entry_path);
+#if 1
 	DeconstructedPath dp;
     parse_path(path, &dp);
 

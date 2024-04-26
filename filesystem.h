@@ -39,11 +39,12 @@ typedef struct Directory {
 typedef struct DeconstructedPath {
 	char path[MAX_PATH_LENGTH];
     char *paths[MAX_FILENAME_LENGTH];  // Array to store path entries
+	uint32_t curr; // current location in the paths array
     char *dirs[MAX_FILENAME_LENGTH];  // Array to store directory names
     char filename[MAX_FILENAME_LENGTH];  // String to store file name
-    int num_dirs;  // Number of directory names
+    uint8_t num_dirs;  // Number of directory names
 	PathType path_type;
-} DeconstructedPath;
+} DeconstructedPath; // TODO SEAN: to fix, check for 'first /' not '/ first
 
 typedef struct FATEntry {
 	uint32_t next_cluster;
@@ -86,7 +87,7 @@ typedef struct FileSystem {
 	StorageInterface disk;
 
 	// Cache or Buffer
-	void *buffer;
+	char *buffer;
 
 	char cwd[MAX_PATH_LENGTH + 1];
 

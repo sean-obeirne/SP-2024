@@ -18,6 +18,8 @@
 #define TOTAL_SIZE (DISK_SIZE * BLOCK_SIZE)
 #define SECTOR_SIZE 512 // 8 sectors = 1 block
 #define ROOT_DIRECTORY_ENTRIES 32
+#define MAX_COMMANDS 8 // number of words in command as a max
+#define MAX_INPUT 200 // number of characters to allow as input
 // #define ROOT_DIRECTORY_ENTRIES 4
 #define MAX_FILENAME_LENGTH 255
 #define MAX_PATH_LENGTH 1023
@@ -26,7 +28,7 @@
 
 // Print debugging info, such as current operation or success status
 ////////////////
-#define DEBUG
+// #define DEBUG
 ////////////////
 // Pause time definitions
 #define SLEEP_FACTOR 3
@@ -52,6 +54,7 @@ typedef enum EntryType EntryType;
 
 
 void show_header_info(bool_t horrizontal);
+
 void phn(const char *header, int ticks);
 void ph(const char *header);
 void pl(void);
@@ -61,26 +64,37 @@ void plw(char line_char);
 void plh(const char *header, char line_char);
 void phl(const char *header);
 void pvl(const char *header, char line_char, int indent);
+
 void box_h(int max_item_size);
 void box_v(char *to_print);
 void box_pad_right(int longest_line);
 void print_chars(void);
+
 void init_fs_buffer(void);
 void clear_fs_buffer(void);
 int dump_fs_buffer(void);
 void pb(void);
 void dr(void);
 void dump_fat(void);
+
+void get_path( void );
+void parse_input(int in_len); // from buffer
+
 char *strip_path(const char *path);
-void merge_paths(const char *path, DeconstructedPath *merge_path);
+void merge_paths(char *path, DeconstructedPath *merge_path);
 void parse_path(const char *path, DeconstructedPath *dp);
 void test_parse_path(const char *path);
 void print_parsed_path(DeconstructedPath dp);
+
 int create_sub_entry(DirectoryEntry *parent, const char *filename, EntryType type);
 int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert);
+
 int add_fat_entry(uint32_t next_cluster);
+
 int get_subdirectory_count(DirectoryEntry *parent);
 int dir_contains(DirectoryEntry *parent, const char *target);
+void adjust_cwd( DeconstructedPath *cwd, const char *path);
+void cd_parent( void );
 
 #endif /* FS_HELPER_H_ */
 
