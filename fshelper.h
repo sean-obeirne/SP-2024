@@ -1,5 +1,6 @@
 #ifndef FS_HELPER_H_
 #define FS_HELPER_H_
+#if 1  // BEG variables
 
 // #include <stdint.h> // Include necessary standard headers
 #include "common.h"
@@ -28,7 +29,7 @@
 
 // Print debugging info, such as current operation or success status
 ////////////////
-// #define DEBUG
+#define DEBUG
 ////////////////
 // Pause time definitions
 #define SLEEP_FACTOR 3
@@ -49,10 +50,9 @@
 typedef struct DirectoryEntry DirectoryEntry;
 typedef struct DeconstructedPath DeconstructedPath;
 typedef enum EntryType EntryType;
+#endif // END Variables
 
-
-
-
+#if 1  // BEG functions
 void show_header_info(bool_t horrizontal);
 
 void phn(const char *header, int ticks);
@@ -80,9 +80,9 @@ void dump_fat(void);
 void get_path( void );
 void parse_input(int in_len); // from buffer
 void run_command(char **args, int word_count);
+void merge_path(char *path);
 
 char *strip_path(const char *path);
-void merge_paths(char *path, DeconstructedPath *merge_path);
 void parse_path(const char *path, DeconstructedPath *dp);
 void test_parse_path(const char *path);
 void print_parsed_path(DeconstructedPath dp);
@@ -95,7 +95,21 @@ int add_fat_entry(uint32_t next_cluster);
 int get_subdirectory_count(DirectoryEntry *parent);
 int dir_contains(DirectoryEntry *parent, const char *target);
 void adjust_cwd( DeconstructedPath *cwd, const char *path);
-void cd_parent( void );
+int cd_parent( void );
+
+#endif // END functions
 
 #endif /* FS_HELPER_H_ */
 
+#if 1  // TODO Useful REGEX queries
+/*
+Useful REGEX queries:
+
+find all delays
+(STEP|FIVER|CSTEP|MOMENT|SHORT_PAUSE|DEBUG_DELAY|LONG_PAUSE|INF_PAUSE)
+
+find non-STEP delays
+__delay\((?!STEP\)).*?\)
+
+*/
+#endif // TODO Useful REGEX queries

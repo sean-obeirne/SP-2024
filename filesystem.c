@@ -1,3 +1,4 @@
+#if 1  // SETUP
 #include "filesystem.h" // Implement filesystem.h
 #include "fshelper.h" // DEV: Include helper functions
 #include "common.h" // Include custom data types
@@ -34,34 +35,12 @@ DeconstructedPath cwd = {
 	.path_type = ABSOLUTE_PATH,
 };
 
-/*
-** HELPER FUNCTIONS
-*/
+#endif // SETUP
 
-void adjust_cwd( DeconstructedPath *cwd, const char *path ){
-	parse_path(path, cwd);
-	print_parsed_path(*cwd);
-}
-
-// Print the header for the whole filesystem application.
-void show_header_info(bool_t horrizontal){
-	int len;
-
-	len = __strlen(fs.cwd);
-	__cio_puts_at(80-len, 0, fs.cwd);
-
-	if(horrizontal){
-		len = __strlen("9 = Directory  7 = File");
-		__cio_printf_at(80-len, 1, "%c = Directory  %c = File", 9, 7);
-	}
-	else{
-		len = __strlen("9 = Directory");
-		__cio_printf_at(80-len, 1, "%c = Directory", 9);
-		len = __strlen("7 = File");
-		__cio_printf_at(80-len, 2, "%c = File", 7);
-	}
-}
-
+#if 1  // BEG Handling input
+//////////////////////
+// HELPER FUNCTIONS //
+//////////////////////
 void get_path( void ){
 	#ifdef DEBUG
 	__cio_printf("Getting path...\n");
@@ -70,8 +49,8 @@ void get_path( void ){
 	
 	int in_len = 2;
 	while(in_len > 1){
-		int start = __strlen(cwd.path) + 1;
-		__cio_printf("%s: ", cwd.path);
+		int start = __strlen(fs.cwd) + 1;
+		__cio_printf("%s: ", fs.cwd);
 		clear_fs_buffer();
 		in_len = __cio_gets(fs.buffer, 80 - start);
 		parse_input(in_len);
@@ -96,7 +75,7 @@ void parse_input(int in_len){
 	// char **words = fs.disk.request_space(MAX_FILENAME_LENGTH);
 	int args_i = 0;
 
-	for (int i = 0; i < in_len - 1; i++) {
+	for (int i = 0; i < in_len; i++) {
         if (fs.buffer[i] == ' ' || fs.buffer[i] == '\n') {
 			command_buffer[buffer_i++] = '\0';
 			buffer_i = 0;
@@ -124,11 +103,16 @@ void run_command(char **args, int arg_count){
 		__cio_printf("Making dir!\n");
 	}
 	else if(__strcmp("print", args[0]) == 0){
+		__sprint(fs.buffer, "/%s%s", fs.cwd, args[1]);
+		dump_fs_buffer();
+		__delay(100);
 		_fs_print_entry(_fs_find_entry_from_path(args[1]), false);
-	}
-		
+		__delay(100);
+	}		
 }
+#endif // END Handle input
 
+#if 1  // BEG Print functions
 // Print a header for a module with no delay
 void phn(const char *text, int ticks) {
 	__cio_printf(" - clearing - \n");
@@ -253,15 +237,34 @@ void print_chars(){
 	}
 }
 
-void init_fs_buffer( void ) {
-	fs.buffer = (char *)_km_page_alloc(1);
+// Pass just a string, creates a box for it
+void box_h(int max_item_size){
+	__cio_putchar('+');
+	for(int i = 1; i <= max_item_size; i++){
+		__cio_putchar('-');
+	}
+	__cio_putchar('+');
+	__cio_putchar('\n');
 }
 
-void clear_fs_buffer( void ) {
-	// Fill the fs.buffer with zeros
-	__memclr(fs.buffer, BLOCK_SIZE);
+void box_v(char *to_print){
+	__cio_printf("| ");
 }
 
+void box_pad_right(int longest_line){
+	int i = __strlen(fs.buffer);
+	int num = longest_line - __strlen(fs.buffer);
+	__cio_printf("%s", fs.buffer);
+	for (i = 0; i <= num; i++){
+		__cio_putchar(' ');
+	}
+	__cio_putchar('|');
+	__cio_putchar('\n');
+}
+
+#endif // END Print functions
+
+#if 1  // BEG Dumping functions
 int dump_fs_buffer( void ){
 	pvl("Dumping Buffer:\n", '-', 0);
 	__delay(STEP);
@@ -289,7 +292,9 @@ void dump_fat( void ) {
 		__delay(STEP);
     }
 }
+#endif // END Dumping functions
 
+#if 1   // BEG Read / write functions
 int read_block(int block_number){ // TODO SEAN chunks
 	if (block_number < 0 || block_number >= DISK_SIZE) {
 		__cio_printf("ERROR: Block number %d not within bounds %d - %d\n", block_number, 0, DISK_SIZE);
@@ -325,46 +330,63 @@ int read_sector( int sector_number, void *buffer ){
 	return 0;
 }
 
-void cd_parent() {
-    // Check if the current working directory is already root
-    if (__strcmp(fs.cwd, "/") == 0) {
-        return;
-    }
+#endif  // END Read / write functions
 
-    uint32_t len = __strlen(fs.cwd);
 
-    // Find the last occurrence of '/' character
-    int i;
-    for (i = len - 1; i >= 0; i--) {
-        if (fs.cwd[i] == '/') {
-            break;
-        }
-    }
-
-    // Terminate and clear the rest of the string's memory
-    fs.cwd[i + 1] = '\0';
-	for(int j = i + 1; j < len; j++){
-		fs.cwd[j] = '\0';
-	}
-
-	adjust_cwd(&cwd, fs.cwd);
-	// __cio_printf("going up! old: %s  new: %s\n", fs.cwd, fs.cwd);
+#if 1  // BEG Helper functions
+void adjust_cwd( DeconstructedPath *cwd, const char *path ){
+	__cio_printf("ADJUSTING.............\n");
+	parse_path(path, cwd);
+	print_parsed_path(*cwd);
 }
 
-void merge_paths(char *path, DeconstructedPath *merge_path) {
+// Print the header for the whole filesystem application.
+void show_header_info(bool_t horrizontal){
+	int len;
+
+	len = __strlen(fs.cwd);
+	__cio_puts_at(80-len, 0, fs.cwd);
+
+	if(horrizontal){
+		len = __strlen("9 = Directory  7 = File");
+		__cio_printf_at(80-len, 1, "%c = Directory  %c = File", 9, 7);
+	}
+	else{
+		len = __strlen("9 = Directory");
+		__cio_printf_at(80-len, 1, "%c = Directory", 9);
+		len = __strlen("7 = File");
+		__cio_printf_at(80-len, 2, "%c = File", 7);
+	}
+}
+
+void init_fs_buffer( void ) {
+	fs.buffer = (char *)_km_page_alloc(1);
+}
+
+void clear_fs_buffer( void ) {
+	// Fill the fs.buffer with zeros
+	__memclr(fs.buffer, BLOCK_SIZE);
+}
+
+void merge_path(char *path) {
 	#ifdef DEBUG
 	__cio_printf("Merging paths, cwd %s, and path %s...\n", fs.cwd, path);
 	__delay(STEP);
 	#endif
-	pwd();
+
+	// pwd();
+	int result;
 	DeconstructedPath dp;
 	parse_path(path, &dp);
-	for(int i = 0; i < dp.num_dirs; i++){
-		__cio_printf(path);
-		if(__strcmp(dp.dirs[i], "..") == 0){
-			cd_parent();
+	__cio_printf("Tryna get %s%s\n", fs.cwd, dp.path);
+	int i = 0;
+	while(strcmp(dp.dirs[i++], "..") == 0){
+		result = cd_parent();
+		if(result != 0){
+			__cio_printf("Failed to move up a diretory\n");
 		}
 	}
+	__cio_printf("%s\n", fs.cwd_dp);
 }
 
 void parse_path(const char *path, DeconstructedPath *dp) {
@@ -373,16 +395,40 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 	__delay(STEP);
 	#endif
 
-    dp->filename[0] = '\0';
-    dp->num_dirs = 0;
-	dp->path_type = path[0] == '/' ? ABSOLUTE_PATH : RELATIVE_PATH;
-	// __cio_printf("so, path type = %d\n", dp->path_type);
-	__strcpy(dp->path,path);
+	// root case
+	if(__strcmp(path, "/") == 0){
+		dp->filename[0] = '/';
+		dp->path[0] = '/';
+		dp->num_dirs = 1;
+		dp->dirs[0] = "/";
+		dp->paths[0] = "/";
+		dp->path_type = ABSOLUTE_PATH;
+		dp->curr = 0;
+		#ifdef DEBUG
+		__cio_printf("Deconstructing path %s!!!\n", path);
+		__delay(STEP);
+		#endif
+		return;
+	}else{
+		dp->filename[0] = '\0';
+		dp->num_dirs = 0;
+		clear_fs_buffer();
+		int pt = path[0] == '/' ? ABSOLUTE_PATH : RELATIVE_PATH;
+		if(pt == RELATIVE_PATH){
+			__strcpy(fs.buffer, cwd.path);
+			__strcat(fs.buffer, path);
+		}
+		else{
+			__strcpy(fs.buffer, path);
+		}
+		dp->path_type = pt;
+		__strcpy(dp->path, fs.buffer);
+		if (path == NULL || *path == '\0') {
+			__cio_printf("ERROR: Path is NULL\n");
+			return;
+		}
+	}
 
-    if (path == NULL || *path == '\0') {
-		__cio_printf("ERROR: Path is NULL\n");
-        return;
-    }
 
     // Other local variables
     char scratch_path[MAX_PATH_LENGTH];
@@ -398,12 +444,12 @@ void parse_path(const char *path, DeconstructedPath *dp) {
     int filename_i = 0;
     int dir_names_i = 0;
 
-	while(path_i < __strlen(path)){ // 11
+	while(path_i < __strlen(path)){
 		filename[filename_i] = path[path_i];
 		scratch_path[scratch_i] = path[path_i];
 
 		if(path[path_i] == '/'){
-			if(path_i == 0){
+			if(path_i == 0 || (dir_names_i == 0 && path_i < 3)){ // be cautious about '../'
 				filename[filename_i] = '/';
 				filename[filename_i + 1] = '\0';
 				scratch_path[scratch_i] = '/';
@@ -413,9 +459,9 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 			}
 
 			// export filename and path
-			dp->dirs[dir_names_i] = _km_page_alloc(1);
+			dp->dirs[dir_names_i] = fs.disk.request_space(sizeof(dp->dirs));
             __strcpy(dp->dirs[dir_names_i], filename);
-            dp->paths[dir_names_i] = _km_page_alloc(1);
+            dp->paths[dir_names_i] = fs.disk.request_space(sizeof(dp->paths));
             __strcpy(dp->paths[dir_names_i], scratch_path);
 			
             dir_names_i++;
@@ -433,12 +479,16 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 		filename[filename_i] = '\0';
 		scratch_path[scratch_i] = '\0';
 
-		dp->dirs[dir_names_i] = _km_page_alloc(1);
-		__strcpy(dp->dirs[dir_names_i], filename);
+		__cio_printf("sizeof dp->dirs: %d, %d\n", sizeof(dp->dirs), dp->dirs);
+		__cio_printf("sizeof dp->dirs[0]: %d\n", sizeof(dp->dirs[0]));
+		pln();
+		// dp->dirs[dir_names_i] = fs.disk.request_space();
+		// dp->paths[dir_names_i] = fs.disk.request_space();
 		dp->paths[dir_names_i] = _km_page_alloc(1);
+		__strcpy(dp->filename, filename);
+		__strcpy(dp->dirs[dir_names_i], filename);
 		__strcpy(dp->paths[dir_names_i], scratch_path);
 		dp->num_dirs = dir_names_i + 1;
-		__strcpy(dp->filename, filename);
 		dp->curr = 0;
 	}
 
@@ -474,25 +524,28 @@ void test_parse_path(const char *path) {
 
 void print_parsed_path(DeconstructedPath dp) {
 	#ifdef DEBUG
-	__cio_printf("PRINTING parsed path...\n");
+	__cio_printf("Printing parsed path...\n");
 	__delay(STEP);
 	#endif
+	if(dp.num_dirs == 0){ // 'dp' should ALWAYS contain at least the root
+		__cio_printf("ERROR: DeconstructedPath dp is NULL\n");
+		#ifdef DEBUG
+		__cio_printf("Printing parsed path---\n");
+		__delay(STEP);
+		#endif
+		return;
+	}
 	__cio_printf("Path: %s\n", dp.path);
-	__delay(STEP);
 	__cio_printf("Number of directories: %d\n", dp.num_dirs);
-	__delay(STEP);
     __cio_printf("File name: %s\n", dp.filename);
-	__delay(STEP);
     for (int i = 0; i < dp.num_dirs; i++) {
         __cio_printf("Directory %d: %s\n", i + 1, dp.dirs[i]);
-		__delay(STEP);
     }
     for (int i = 0; i < dp.num_dirs; i++) {
         __cio_printf("PATH %d: %s\n", i + 1, dp.paths[i]);
-		__delay(STEP);
     }
 	#ifdef DEBUG
-	__cio_printf("PRINTING parsed path!!!\n");
+	__cio_printf("Printing parsed path!!!\n");
 	__delay(STEP);
 	#endif
 }
@@ -590,7 +643,12 @@ int add_fat_entry(uint32_t next_cluster) {
 int get_subdirectory_count(DirectoryEntry *parent){
 	return 0;
 }
+#endif // END Helper functions
 
+#if 1  // BEG Directory manipulation
+//////////////////////////
+// DIRECTORY FUNCTIONS  //
+//////////////////////////
 int dir_contains(DirectoryEntry *parent, const char *target){
 	int subdir_count = get_subdirectory_count(parent);
 	for(int i = 0; i < subdir_count; i++){
@@ -601,11 +659,6 @@ int dir_contains(DirectoryEntry *parent, const char *target){
 	return -1;
 }
 
-
-/////////////////////////
-// DIRECTORY FUNCTIONS //
-/////////////////////////
-
 void pwd(){
 	__cio_printf("%s\n", fs.cwd);
 }
@@ -614,24 +667,67 @@ const char *get_current_dir(){
 	return fs.cwd;
 }
 
+int cd_parent() {
+	int result = -1;
+    // Check if the current working directory is already root
+    if (__strcmp(fs.cwd, "/") == 0) {
+		__cio_printf("ERROR: Already at root, cannot go up\n");
+        return result;
+    }
+
+    uint32_t len = __strlen(fs.cwd);
+	__cio_printf("This len = %d\n", len);
+
+    // Find the last occurrence of '/' character
+    int i;
+    for (i = len - 1; i >= 0; i--) {
+        if (fs.cwd[i] == '/') {
+            break;
+        }
+    }
+    // Terminate and clear the rest of the string's memory
+	for(int j = i + 1; j < len; j++){
+		fs.cwd[j] = '\0';
+	}
+
+	pln();
+	__cio_printf("idk, path1 %s\n", cwd.path);
+	adjust_cwd(&cwd, fs.cwd);
+	__cio_printf("idk, path2 %s\n", cwd.path);
+	
+	return result;
+}
+
 int change_dir(const char *path){
 	#ifdef DEBUG
 	__cio_printf("CD'ing to %s...\n", path);
 	__delay(STEP);
 	#endif
 
+	DirectoryEntry *entry;
 	DeconstructedPath dp;
 	parse_path(path, &dp);
+
 	if(dp.path_type == ABSOLUTE_PATH){
 		__strcpy(fs.cwd, dp.path);
 	}
 	else if(dp.path_type == RELATIVE_PATH){
-		merge_paths(dp.path, &dp);
+		clear_fs_buffer();
+		__strcat(fs.cwd, dp.path);
+		__cio_printf("GOT IT JK %s, \n", fs.cwd);
+		if((entry = _fs_find_entry_from_path(fs.cwd)) == 0){
+			__cio_printf("GOT IT %s, \n", fs.cwd);
+			__cio_printf("GOT IT %s, \n", entry->filename);
+			merge_path(dp.path);
+			__cio_printf("GOT IT %s, \n", fs.cwd);
+		}
+		_fs_print_entry(_fs_find_entry_from_path(fs.cwd), true);
 	}
+	_fs_print_entry(_fs_find_entry_from_path("/"), true);
+
+	// dr();
 	
 	show_header_info(true);
-	// print_parsed_path(dp);
-
 
 	#ifdef DEBUG
 	__cio_printf("CD'ing to %s!!!\n", path);
@@ -658,31 +754,6 @@ int close_dir(Directory *dir) {
 
     // Implement logic to close a directory
     return 0;
-}
-
-// Pass just a string, creates a box for it
-void box_h(int max_item_size){
-	__cio_putchar('+');
-	for(int i = 1; i <= max_item_size; i++){
-		__cio_putchar('-');
-	}
-	__cio_putchar('+');
-	__cio_putchar('\n');
-}
-
-void box_v(char *to_print){
-
-}
-
-void box_pad_right(int longest_line){
-	int i = __strlen(fs.buffer);
-	int num = longest_line - __strlen(fs.buffer);
-	__cio_printf("%s", fs.buffer);
-	for (i = 0; i <= num; i++){
-		__cio_putchar(' ');
-	}
-	__cio_putchar('|');
-	__cio_putchar('\n');
 }
 
 int list_dir_contents(const char *path, bool_t box) { //TODO make this more line print_entry()
@@ -773,11 +844,13 @@ int list_dir_contents(const char *path, bool_t box) { //TODO make this more line
 	#endif
 	return 0;
 }
+#endif // END Directory manipulation
 
+
+#if 1  // BEG Filesystem functions
 //////////////////////////
 // FILESYSTEM FUNCTIONS //
 //////////////////////////
-
 int _fs_init( void ) {
 	#ifdef DEBUG
 	__cio_printf("Initializing Filesystem\n");
@@ -794,7 +867,7 @@ int _fs_init( void ) {
 	fs.number_of_fats = 1;
 	fs.total_sectors = 2880;
 	fs.fat_size_sectors = 16; // fat size in sectors
-	fs.root_directory_cluster = 2; // root is at cluster _
+	fs.root_directory_cluster = 1; // root is at cluster _
 				       //Q? do clusters=blocks=pages? and do sectors=segments?
 
 	// Initialize StorageInterface disk
@@ -843,7 +916,7 @@ int _fs_init( void ) {
 
 	// Root Directory Information
 	// fs.root_directory_entries = 32;
-	// fs.root_directory = (DirectoryEntry *) disk.request_space(sizeof(DirectoryEntry) * ROOT_DIRECTORY_ENTRIES); // TODO SEAN: do not allocate pages, but bytes
+	fs.root_directory = (DirectoryEntry *) disk.request_space(sizeof(DirectoryEntry) * ROOT_DIRECTORY_ENTRIES); // TODO SEAN: do not allocate pages, but bytes
 
 	// if( root_directory == NULL ){
 		//TODO SEAN: free fs.fat
@@ -881,6 +954,8 @@ int _fs_init( void ) {
 
 	// cwd
 	fs.cwd[0] = '/';
+	fs.cwd_dp = disk.request_space(sizeof(DeconstructedPath)); 
+	parse_path("/", fs.cwd_dp);
 
 	// Mount status
 	fs.mounted = false;
@@ -893,7 +968,6 @@ int _fs_init( void ) {
 	__delay(STEP);
 	#endif
 
-	// Return 0 on success
 	return 0;
 }
 
@@ -912,7 +986,7 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 	__cio_printf("  Finding (from path %s)...\n", path);
 	__delay(STEP);
 	#endif
-
+	
 	DeconstructedPath dp;
     parse_path(path, &dp);
 
@@ -1029,7 +1103,6 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 	// 	// __cio_printf("FINDING ENTRY %s IN ROOT\n", dp.filename);
 	// 	#ifdef DEBUG
 	// 	__cio_printf("Finding (from path %s)!!!\n", path);
-	// 	__delay(STEP);
 	// 	#endif
 	// 	return _fs_find_entry(dp.filename);
 	// }
@@ -1043,7 +1116,6 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 	// 		__cio_printf("Found matching filenames: %s %s\n", curr_entry->filename, dp.filename);
 	// 		#ifdef DEBUG
 	// 		__cio_printf("Finding (from path %s)!!!\n", path);
-	// 		__delay(STEP);
 	// 		#endif
 	// 		break;
 	// 	}
@@ -1141,14 +1213,13 @@ int _fs_create_entry_from_path(const char *entry_path, EntryType type){
 		parent = _fs_find_root_entry(dp.dirs[0]);
 		// __cio_printf("Parent: %s\n", parent);
 		if (parent == NULL){
-			__cio_printf("ERROR: Unable to find root");
+			__cio_printf("ERROR: Unable to find root\n");
 			return -1;
 		}
 
 		child = _fs_find_root_entry(dp.dirs[1]);
 
 		// __cio_printf("Child: %s\n", child->filename);
-		// __delay(STEP);
 		if (child == NULL){
 			result = _fs_create_root_entry(dp.dirs[1], DIRECTORY_ATTRIBUTE);
 			if(result != 0){
@@ -1440,7 +1511,7 @@ int _fs_write_file(const char *path, const void *data) {
 
 	// If the file doesn't exist, return an error
 	if (entry == NULL) {
-		__cio_printf("ERROR: Filename %s not found\n", entry);
+		__cio_printf("ERROR: File %s not found\n", path);
 		return -1;
 	}
 
@@ -1521,7 +1592,7 @@ int _fs_print_entry(DirectoryEntry *entry, bool_t print_children){
 	// #endif
 
 	if(entry == NULL){
-		__cio_printf("ERROR: Entry %s is NULL\n", entry->filename);
+		__cio_printf("ERROR: Entry is NULL\n");
 		return -1;
 	}
 	if(entry->type == DIRECTORY_ATTRIBUTE){
@@ -1545,3 +1616,4 @@ int _fs_print_entry(DirectoryEntry *entry, bool_t print_children){
 	// #endif
 	return 0;
 }
+#endif // END Filesystem implementation

@@ -1,12 +1,12 @@
 #ifndef FAT32_H_
 #define FAT32_H_
+#if 1  // END Definitions
 
 #include "common.h"
 #include "ramdisk.h"
 #include "fshelper.h"
 
 // Define constants, macros, and data structures specific to FAT32 filesystem
-// #define ROOT_LEN 512 // how many files can be in root?
 
 
 typedef enum EntryType {
@@ -37,13 +37,13 @@ typedef struct Directory {
 } Directory;
 
 typedef struct DeconstructedPath {
-	char path[MAX_PATH_LENGTH];
-    char *paths[MAX_FILENAME_LENGTH];  // Array to store path entries
-	uint32_t curr; // current location in the paths array
-    char *dirs[MAX_FILENAME_LENGTH];  // Array to store directory names
     char filename[MAX_FILENAME_LENGTH];  // String to store file name
+	char path[MAX_PATH_LENGTH];
     uint8_t num_dirs;  // Number of directory names
+    char *dirs[MAX_FILENAME_LENGTH];  // Array to store directory names
+    char *paths[MAX_FILENAME_LENGTH];  // Array to store path entries
 	PathType path_type;
+	uint32_t curr; // current location in the paths array
 } DeconstructedPath; // TODO SEAN: to fix, check for 'first /' not '/ first
 
 typedef struct FATEntry {
@@ -57,8 +57,6 @@ typedef struct FAT {
 } FAT;
 
 typedef struct FileSystem {
-	// Define your filesystem structures here
-	// e.g., directory entry structure, FAT entry structure, etc.
 	// Boot Sector Information
 	uint16_t bytes_per_sector;
 	uint8_t sectors_per_cluster;
@@ -90,6 +88,7 @@ typedef struct FileSystem {
 	char *buffer;
 
 	char cwd[MAX_PATH_LENGTH + 1];
+	DeconstructedPath *cwd_dp;
 
 	// Mounted status
 	bool_t mounted;
@@ -97,9 +96,9 @@ typedef struct FileSystem {
 	// Error Handling
 	int last_error;
 } FileSystem;
+#endif // END Definitions
 
-
-/*********DIRECTORUIES*********/
+#if 1  // BEG Directories
 /*
 ** Print Working Directory
 */
@@ -186,8 +185,9 @@ int dir_exists(const char *path);
 */
 int traverse_directory_tree(const char *root_path, void (*callback)(const char *path));
 
-/*************************************************************/
+#endif // END Directories
 
+#if 1  // BEG Filesystem
 /*
  ** Init the filesystem.
  ** @return 0 on success, -1 on failure.
@@ -299,6 +299,7 @@ void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename,
 
 // Add more function prototypes as needed for your FAT32 filesystem implementation
 
+#endif // END Filesystem
 
 #endif /* FAT32_H_ */
 
