@@ -83,7 +83,7 @@ void run_command(char **args, int word_count);
 void merge_path(char *path);
 
 char *strip_path(const char *path);
-void parse_path(const char *path, DeconstructedPath *dp);
+void parse_path(const char *path);
 void test_parse_path(const char *path);
 void print_parsed_path(DeconstructedPath dp);
 

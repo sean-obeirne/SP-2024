@@ -10,8 +10,8 @@
 
 
 typedef enum EntryType {
-    FILE_ATTRIBUTE = 0x01,      // Attribute for files
-    DIRECTORY_ATTRIBUTE = 0x02  // Attribute for directories
+    FILE = 0x01,      // Attribute for files
+    DIRECTORY = 0x02  // Attribute for directories
 } EntryType;
 
 typedef enum PathType {
@@ -72,7 +72,7 @@ typedef struct FileSystem {
 
 	// Root Directory Information
 	uint16_t root_directory_entries;
-	DirectoryEntry *root_directory;
+	DirectoryEntry *root_directory_entry;
 
 	// Current Directory Information
 	uint32_t current_directory_cluster;
