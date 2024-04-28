@@ -86,6 +86,10 @@ char *strip_path(const char *path);
 void parse_path(const char *path, DeconstructedPath *dp);
 void test_parse_path(const char *path);
 void print_parsed_path(DeconstructedPath dp);
+int create_files_from_path( EntryType type );
+int _fs_create_entry( EntryType type );
+int _fs_create_dir( const char *path );
+int _fs_create_file( const char *path );
 
 int create_sub_entry(DirectoryEntry *parent, const char *filename, EntryType type);
 int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert);

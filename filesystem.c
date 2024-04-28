@@ -488,8 +488,8 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 		scratch_i++;
 		filename_i++;
 		path_i++;
-		__cio_printf("iterating...fn:%s  sp:%s\n        ps:%s, ds:%s\n", filename, scratch_path, path, dp->dirs[dir_names_i]);
-		__delay(25);
+		// __cio_printf("iterating...fn:%s  sp:%s\n        ps:%s, ds:%s\n", filename, scratch_path, path, dp->dirs[dir_names_i]);
+		// __delay(25);
 	}
 	// __cio_printf("This step, PRE NULL filename=%s and scratch_path=%s\n", filename, scratch_path);
 	if(path[path_i] == '\0'){
@@ -505,9 +505,6 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 		dp->paths[dir_names_i] = _km_page_alloc(1);
 		dp->dirs[dir_names_i] = _km_page_alloc(1);
 		__strcpy(dp->filename, filename);
-		__cio_printf("SO HERE WE ARE COPYING %s TO dp->dirs[%d]", filename, dir_names_i);
-		__cio_printf("SO HERE WE ARE COPYING %s TO dp->dirs[%d]", dp->filename, dir_names_i);
-		__delay(200);
 		__strcpy(dp->dirs[dir_names_i], filename);
 		__strcpy(dp->paths[dir_names_i], scratch_path);
 		dp->num_dirs = dir_names_i + 1;
@@ -1231,7 +1228,7 @@ int _fs_create_entry_from_path(const char *entry_path, EntryType type){
 
 		// __cio_printf("Child: %s\n", child->filename);
 		if (child == NULL){
-			result = _fs_create_root_entry(dp.dirs[1], DIRECTORY);
+			result = create_files_from_path(DIRECTORY);
 			if(result != 0){
 				__cio_printf("ERROR: Failed to find then create child \"%s\"\n", dp.dirs[1]);
 				return -1;
@@ -1370,7 +1367,7 @@ int _fs_create_root_entry(const char *filename, EntryType type) {
     }
 
     // Create a new directory entry
-    DirectoryEntry *new_entry = _km_page_alloc(1);
+    DirectoryEntry *new_entry = fs.disk.request_space(sizeof(DirectoryEntry));
     _fs_initialize_directory_entry(new_entry, filename, 0, type, 0, NULL, 1);
 	
 	int result = add_sub_entry(_fs_find_root_entry("/"), new_entry);
@@ -1384,6 +1381,198 @@ int _fs_create_root_entry(const char *filename, EntryType type) {
 	__delay(STEP);
 	#endif
     return 0; // Success
+}
+
+int _fs_create_dir( const char *path ){
+	parse_path(path, &nwd);
+
+	return _fs_create_entry( DIRECTORY );
+}
+int _fs_create_file( const char *path ){
+	parse_path(path, &nwd);
+
+	return _fs_create_entry( FILE );
+}
+
+int _fs_create_entry( EntryType type ){
+	#ifdef DEBUG
+	__cio_printf(" Creating an entry %s...\n", nwd.filename);
+	__delay(STEP);
+	#endif
+	nwd.curr = 1; // no need to try and re-create root
+	DirectoryEntry *parent = NULL;
+	DirectoryEntry *new_entry = fs.disk.request_space(sizeof(DirectoryEntry));
+    _fs_initialize_directory_entry(new_entry, nwd.filename, 0, type, 0, NULL, 1);
+	while(nwd.curr < nwd.num_dirs){
+		__cio_printf("Printing nwd.curr: %d\n", nwd.curr);
+		switch(nwd.curr){
+			case 0:
+				__cio_printf("ERROR: problematic curr pointer\n");
+				return -1;
+				break;
+			case 1:
+				parent = &root_directory_entry;
+				break;
+			case 2:
+				parent = _fs_find_root_entry(nwd.dirs[1]);
+				break;
+			default:
+				parent = _fs_find_entry_from_path(nwd.paths[nwd.curr++]);
+		}
+	}
+	int result = add_sub_entry(_fs_find_root_entry("/"), new_entry);
+	if(result != 0){
+		
+		#ifdef DEBUG
+		__cio_printf(" Creating an entry %s---\n", nwd.filename);
+		__delay(STEP);
+		#endif
+
+		return -1;
+	}
+
+	#ifdef DEBUG
+	__cio_printf(" Creating an entry %s!!!\n", nwd.filename);
+	__delay(STEP);
+	#endif
+
+	return 0;
+}
+#if 0
+if(dp.num_dirs == 1){
+		parent = _fs_find_root_entry(dp.dirs[0]);
+		// __cio_printf("Parent: %s\n", parent);
+		if (parent == NULL){
+			__cio_printf("ERROR: Unable to find root\n");
+			return -1;
+		}
+	}
+	else if(dp.num_dirs == 2){
+		parent = _fs_find_root_entry(dp.dirs[0]);
+		// __cio_printf("Parent: %s\n", parent);
+		if (parent == NULL){
+			__cio_printf("ERROR: Unable to find root\n");
+			return -1;
+		}
+
+		child = _fs_find_root_entry(dp.dirs[1]);
+
+		// __cio_printf("Child: %s\n", child->filename);
+		if (child == NULL){
+			result = create_files_from_path(DIRECTORY);
+			if(result != 0){
+				__cio_printf("ERROR: Failed to find then create child \"%s\"\n", dp.dirs[1]);
+				return -1;
+			}
+			child = _fs_find_root_entry(dp.dirs[1]);
+			if(child == NULL){
+				__cio_printf("ERROR: Failed to find created child \"%s\"\n", dp.dirs[1]);
+				return -1;
+			}
+		}
+	}
+	else if (dp.num_dirs == 3){
+		parent = _fs_find_root_entry(dp.dirs[1]);
+		if(parent == NULL){
+			#ifdef DEBUG
+			__cio_printf("Entry %s does not already exist in root, creating...\n", dp.dirs[1]);
+			#endif
+			result = _fs_create_root_entry(dp.dirs[1], DIRECTORY);
+			if (result == -1){
+				__cio_printf("ERROR: Unable to create directory %s in root\n", dp.dirs[1]);
+			}
+			parent = _fs_find_root_entry(dp.dirs[1]);
+			if(parent == NULL){
+				__cio_printf("ERROR: Could not find newly created dir %s\n", dp.dirs[1]);
+			}
+		}
+		child = _fs_find_entry_from_path(dp.paths[2]);
+		if (child != NULL){
+			// this should not be hit, as we have  already
+			// validated that path "/parent/child" return NULL;
+			__cio_printf("ERROR: Child somehow already exists, aborting\n");
+			return -1;
+		}
+		else{ // create child
+			#ifdef DEBUG
+			__cio_printf("Child %s is NULL, creating...\n", dp.dirs[2]);
+			#endif
+			child = _km_page_alloc(1);
+			_fs_initialize_directory_entry(child, dp.dirs[2], 0, DIRECTORY, 0, NULL, parent->depth+1);
+			add_sub_entry(parent, child);
+		}
+	}
+	else if (dp.num_dirs >= 4){
+		parent = _fs_find_entry_from_path(dp.paths[dp.num_dirs- 2]); // starts at index \2 for nd=4
+		while(parent == NULL){
+			#ifdef DEBUG
+			__cio_printf("Entry %s does not already exist in root, creating...\n", dp.dirs[dp.num_dirs - 2]);
+			#endif
+			result = _fs_create_entry_from_path(dp.paths[dp.num_dirs - 2], DIRECTORY);
+			if (result == -1){
+				__cio_printf("ERROR: Unable to create directory %s\n", dp.dirs[dp.num_dirs - 2]);
+			}
+			pln();
+			parent = _fs_find_entry_from_path(dp.paths[dp.num_dirs - 2]);
+			if(parent == NULL){
+				__cio_printf("ERROR: Could not find newly created parent %s\n", dp.paths[dp.num_dirs - 2]);
+				return -1;
+			}
+		}
+		__cio_printf("Looking for child at %s\n", dp.paths[dp.num_dirs - 1]);
+		child = _fs_find_entry_from_path(dp.paths[dp.num_dirs - 1]);
+		if(child == NULL){
+			for(int i = 0; i <= parent->subdirectory->num_files; i++){
+				__cio_printf("Looking for child at %s\n", dp.paths[dp.num_dirs - 1]);
+				pln();
+				// dr();
+				print_parsed_path(dp);
+				if (__strcmp(parent->subdirectory->files[i]->filename, dp.dirs[dp.num_dirs - 1]) == 0 ){ // found child!
+					child = parent->subdirectory->files[i];
+					break;
+				}
+			}
+		}
+		if(child == NULL){
+			result = _fs_create_entry_from_path(dp.paths[dp.num_dirs - 1], type);
+			if (result == -1){
+				__cio_printf("ERROR: Unable to create entry %s\n", dp.dirs[dp.num_dirs - 1]);
+				return -1;
+			}
+			child = _fs_find_entry_from_path(dp.paths[dp.num_dirs - 1]);
+			__cio_printf("FOUND CHILD \n");
+			_fs_print_entry(child, true);
+		}
+		
+		if(child == NULL){
+			__cio_printf("ERROR: Failed to create file at %s\n", dp.dirs[dp.num_dirs - 1]);
+			return NULL;
+		}
+	}
+#endif
+
+
+int create_files_from_path( EntryType type ) {
+    // Iterate over the paths array
+    for (uint8_t i = 0; i < nwd.num_dirs; i++) {
+        // Get the current path
+        char *current_path = nwd.paths[i];
+        
+        // Create the file at the current path
+        // create_file_at_path(current_path);
+		DirectoryEntry *parent;
+		DirectoryEntry *new_entry = fs.disk.request_space(sizeof(DirectoryEntry));
+		_fs_initialize_directory_entry(new_entry, nwd.dirs[i], 0, type, 0, NULL, 1);
+		if(i > 0){
+			parent = _fs_find_entry_from_path(nwd.paths[i-1]);
+			__cio_printf("WE TRIED WITH %s\n", nwd.paths[i-1]);
+			pl();
+		}
+		if(parent != NULL){
+			add_sub_entry(parent, new_entry);
+		}
+    }
+	return 0;
 }
 
 void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryType type, uint32_t cluster, DirectoryEntry *next, uint8_t depth) {
