@@ -385,7 +385,7 @@ void merge_path(char *path) {
 	// pwd();
 	int result;
 	DeconstructedPath dp;
-	parse_path(path, &dp);
+	// parse_path(path, &dp);
 	__cio_printf("Tryna get %s%s\n", fs.cwd, dp.path);
 	int i = 0;
 	while(strcmp(dp.dirs[i++], "..") == 0){
@@ -397,7 +397,7 @@ void merge_path(char *path) {
 	__cio_printf("%s\n", fs.cwd_dp);
 }
 
-void parse_path(const char *path, DeconstructedPath *dp) {
+void parse_path(const char *path) {
 	#ifdef DEBUG
 	__cio_printf("Deconstructing path %s...\n", path);
 	__delay(STEP);
@@ -405,13 +405,13 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 
 	// root case
 	if(__strcmp(path, "/") == 0){
-		dp->filename[0] = '/';
-		dp->path[0] = '/';
-		dp->num_dirs = 1;
-		dp->dirs[0] = "/";
-		dp->paths[0] = "/";
-		dp->path_type = ABSOLUTE_PATH;
-		dp->curr = 0;
+		nwd.filename[0] = '/';
+		nwd.path[0] = '/';
+		nwd.num_dirs = 1;
+		nwd.dirs[0] = "/";
+		nwd.paths[0] = "/";
+		nwd.path_type = ABSOLUTE_PATH;
+		nwd.curr = 0;
 		#ifdef DEBUG
 		__cio_printf("Deconstructing path %s!!!\n", path);
 		__delay(STEP);
@@ -423,8 +423,8 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 			__cio_printf("ERROR: Path is NULL\n");
 			return;
 		}
-		dp->filename[0] = '\0';
-		dp->num_dirs = 0;
+		nwd.filename[0] = '\0';
+		nwd.num_dirs = 0;
 		clear_fs_buffer();
 		int pt = path[0] == '/' ? ABSOLUTE_PATH : RELATIVE_PATH;
 		if(pt == RELATIVE_PATH){
@@ -433,10 +433,10 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 		}
 		else{
 			__strcpy(fs.buffer, path);
-			dp->num_dirs = 1; // count root
+			nwd.num_dirs = 1; // count root
 		}
-		dp->path_type = pt;
-		__strcpy(dp->path, fs.buffer);
+		nwd.path_type = pt;
+		__strcpy(nwd.path, fs.buffer);
 	}
 
 
@@ -470,12 +470,12 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 			}
 
 			// export filename and path
-			// dp->dirs[dir_names_i] = fs.disk.request_space(sizeof(dp->dirs));
-			dp->dirs[dir_names_i] = fs.disk.request_space(sizeof(dp->dirs));
-            __strcpy(dp->dirs[dir_names_i], filename);
-            // dp->paths[dir_names_i] = fs.disk.request_space(sizeof(dp->paths));
-            dp->paths[dir_names_i] = fs.disk.request_space(sizeof(dp->paths));
-            __strcpy(dp->paths[dir_names_i], scratch_path);
+			// nwd.dirs[dir_names_i] = fs.disk.request_space(sizeof(nwd.dirs));
+			nwd.dirs[dir_names_i] = fs.disk.request_space(sizeof(nwd.dirs));
+            __strcpy(nwd.dirs[dir_names_i], filename);
+            // nwd.paths[dir_names_i] = fs.disk.request_space(sizeof(nwd.paths));
+            nwd.paths[dir_names_i] = fs.disk.request_space(sizeof(nwd.paths));
+            __strcpy(nwd.paths[dir_names_i], scratch_path);
 			
             dir_names_i++;
 
@@ -487,7 +487,7 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 		scratch_i++;
 		filename_i++;
 		path_i++;
-		// __cio_printf("iterating...fn:%s  sp:%s\n        ps:%s, ds:%s\n", filename, scratch_path, path, dp->dirs[dir_names_i]);
+		// __cio_printf("iterating...fn:%s  sp:%s\n        ps:%s, ds:%s\n", filename, scratch_path, path, nwd.dirs[dir_names_i]);
 		// __delay(25);
 	}
 	// __cio_printf("This step, PRE NULL filename=%s and scratch_path=%s\n", filename, scratch_path);
@@ -496,25 +496,25 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 		filename[filename_i] = '\0';
 		scratch_path[scratch_i] = '\0';
 
-		// __cio_printf("sizeof dp->dirs: %d, %d\n", sizeof(dp->dirs), dp->dirs);
-		// __cio_printf("sizeof dp->dirs[0]: %d\n", sizeof(dp->dirs[0]));
+		// __cio_printf("sizeof nwd.dirs: %d, %d\n", sizeof(nwd.dirs), nwd.dirs);
+		// __cio_printf("sizeof nwd.dirs[0]: %d\n", sizeof(nwd.dirs[0]));
 		// pln();
-		// dp->dirs[dir_names_i] = fs.disk.request_space();
-		// dp->paths[dir_names_i] = fs.disk.request_space();
-		dp->paths[dir_names_i] = _km_page_alloc(1);
-		dp->dirs[dir_names_i] = _km_page_alloc(1);
-		__strcpy(dp->filename, filename);
-		__strcpy(dp->dirs[dir_names_i], filename);
-		__strcpy(dp->paths[dir_names_i], scratch_path);
-		dp->num_dirs = dir_names_i + 1;
-		dp->curr = 0;
+		// nwd.dirs[dir_names_i] = fs.disk.request_space();
+		// nwd.paths[dir_names_i] = fs.disk.request_space();
+		nwd.paths[dir_names_i] = _km_page_alloc(1);
+		nwd.dirs[dir_names_i] = _km_page_alloc(1);
+		__strcpy(nwd.filename, filename);
+		__strcpy(nwd.dirs[dir_names_i], filename);
+		__strcpy(nwd.paths[dir_names_i], scratch_path);
+		nwd.num_dirs = dir_names_i + 1;
+		nwd.curr = 0;
 	}
 
 	#ifdef DEBUG
 	__cio_printf("Deconstructing path %s!!!\n", path);
 	__delay(STEP);
 	#endif
-	print_parsed_path(*dp);
+	print_parsed_path(nwd);
 }
 
 void test_parse_path(const char *path) {
@@ -524,7 +524,7 @@ void test_parse_path(const char *path) {
 	#endif
 	
 	DeconstructedPath dp;
-    parse_path(path, &dp);
+    // parse_path(path, &dp);
 
 	__cio_printf("Path: %s\n", dp.path);
 	__cio_printf("Number of directories: %d\n", dp.num_dirs);
@@ -571,7 +571,7 @@ void print_parsed_path(DeconstructedPath dp) {
 
 int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
 	#ifdef DEBUG
-	__cio_printf("Adding sub entry to %s...\n", dest->filename);
+	__cio_printf("Adding sub entry %s to %s...\n", insert->filename, dest->filename);
 	__delay(STEP);
 	#endif
 
@@ -596,7 +596,7 @@ int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
 	dest->subdirectory->num_files++;
 	
 	#ifdef DEBUG
-	__cio_printf("Adding sub entry to %s!!!\n", dest->filename);
+	__cio_printf("Adding sub entry %s to %s!!!\n", insert->filename, dest->filename);
 	__delay(STEP);
 	#endif
 	return 0;
@@ -725,7 +725,7 @@ int change_dir(const char *path){
 
 	DirectoryEntry *entry;
 	DeconstructedPath dp;
-	parse_path(path, &dp);
+	// parse_path(path, &dp);
 
 	if(dp.path_type == ABSOLUTE_PATH){
 		__strcpy(fs.cwd, dp.path);
@@ -974,7 +974,7 @@ int _fs_init( void ) {
 	// cwd
 	fs.cwd[0] = '/';
 	fs.cwd_dp = disk.request_space(sizeof(DeconstructedPath)); 
-	parse_path("/", fs.cwd_dp);
+	// parse_path("/", fs.cwd_dp);
 
 	// Mount status
 	fs.mounted = false;
@@ -1007,7 +1007,7 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 	#endif
 	
 	DeconstructedPath dp;
-    parse_path(path, &dp);
+    // parse_path(path, &dp);
 
 
 	DirectoryEntry *parent = NULL;
@@ -1190,7 +1190,7 @@ int _fs_create_entry_from_path(const char *entry_path, EntryType type){
 	__strcpy(path, entry_path);
 
 	DeconstructedPath dp;
-    parse_path(path, &dp);
+    // parse_path(path, &dp);
 
 
 	DirectoryEntry *entry = _fs_find_entry_from_path(path);
@@ -1384,12 +1384,12 @@ int _fs_create_root_entry(const char *filename, EntryType type) {
 }
 
 int _fs_create_dir( const char *path ){
-	parse_path(path, &nwd);
+	parse_path(path);
 
 	return _fs_create_entry( DIRECTORY );
 }
 int _fs_create_file( const char *path ){
-	parse_path(path, &nwd);
+	parse_path(path);
 
 	return _fs_create_entry( FILE );
 }
@@ -1399,6 +1399,7 @@ int _fs_create_entry( EntryType type ){
 	__cio_printf(" Creating an entry %s...\n", nwd.filename);
 	__delay(STEP);
 	#endif
+	int result = -1;
 	nwd.curr = 1; // no need to try and re-create root
 	DirectoryEntry *parent = NULL;
 	DirectoryEntry *new_entry = fs.disk.request_space(sizeof(DirectoryEntry));
@@ -1417,14 +1418,14 @@ int _fs_create_entry( EntryType type ){
 				parent = _fs_find_root_entry(nwd.dirs[1]);
 				break;
 			default:
-				parent = _fs_find_entry_from_path(nwd.paths[nwd.curr]);
+				parent = _fs_find_entry_from_path(nwd.paths[nwd.curr - 1]);
 		}
 		nwd.curr++;
+
+		result = add_sub_entry(parent, new_entry);
 		// _fs_print_entry(parent, true);
 	}
 	__cio_printf("HIT IT IN CREATE\n");
-	pl();
-	int result = add_sub_entry(_fs_find_root_entry("/"), new_entry);
 	if(result != 0){
 		
 		#ifdef DEBUG
@@ -1434,6 +1435,7 @@ int _fs_create_entry( EntryType type ){
 
 		return -1;
 	}
+	pl();
 
 	#ifdef DEBUG
 	__cio_printf(" Creating an entry %s!!!\n", nwd.filename);
