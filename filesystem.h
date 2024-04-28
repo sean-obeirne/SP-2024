@@ -10,8 +10,8 @@
 
 
 typedef enum EntryType {
-    FILE_ATTRIBUTE = 0x01,      // Attribute for files
-    DIRECTORY_ATTRIBUTE = 0x02  // Attribute for directories
+    FILE = 0x01,      // Attribute for files
+    DIRECTORY = 0x02  // Attribute for directories
 } EntryType;
 
 typedef enum PathType {
