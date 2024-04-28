@@ -608,7 +608,7 @@ int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
 
 int create_sub_entry(DirectoryEntry *parent, const char *filename, EntryType type) {
 	#ifdef DEBUG
-	__cio_printf("Creating sub_entry of %s...\n", parent->filename);
+	__cio_printf("Creating sub_entry of %s...\n", parent->path);
 	__delay(STEP);
 	#endif
 
@@ -620,7 +620,7 @@ int create_sub_entry(DirectoryEntry *parent, const char *filename, EntryType typ
 
 	DirectoryEntry *child = _km_page_alloc(1);
 
-	_fs_initialize_directory_entry(child, filename, 0, type, 0, NULL, parent->depth+1);
+	_fs_initialize_directory_entry(child, filename, 0, type, 0, NULL, parent->depth+1, nwd.path);
 
 	
 	int result = add_sub_entry(parent, child);
@@ -1006,12 +1006,18 @@ int _fs_mount( void ) {
 
 DirectoryEntry *traverse_directory(DirectoryEntry *directory_entry, int depth, const char *path_to_search) {
     // Check if the directory entry pointer itself is NULL
-    if (directory_entry == NULL) {
+	if (directory_entry == NULL || path_to_search == NULL || *path_to_search == '\0') {
         return NULL;
     }
+	if(depth == 0){
+		parse_path(path_to_search);
+	}
+
+	
 
     #ifdef DEBUG
-    __cio_printf("Traversing directory with depth: %d\n", depth);
+    __cio_printf("Traversing directory with depth: %d for entry %s\n", depth, path_to_search);
+	__delay(STEP);
     #endif
 
     // Recursively search for the filename within the directory
@@ -1019,7 +1025,7 @@ DirectoryEntry *traverse_directory(DirectoryEntry *directory_entry, int depth, c
         DirectoryEntry *sub_entry = directory_entry->subdirectory->files[i];
         if (sub_entry != NULL) {
             // Check if the filename matches the one we're searching for
-            if (__strcmp(sub_entry->filename, path_to_search) == 0) {
+            if (__strcmp(sub_entry->path, path_to_search) == 0) {
                 // If found, print the filename and return the directory entry
                 for (int j = 0; j < depth; j++) {
                     __cio_printf("  ");
@@ -1033,6 +1039,7 @@ DirectoryEntry *traverse_directory(DirectoryEntry *directory_entry, int depth, c
                 // Recursively search within the subdirectory
                 DirectoryEntry *found_entry = traverse_directory(sub_entry, depth + 1, path_to_search);
                 if (found_entry != NULL) {
+					__cio_printf("");
                     return found_entry;
                 }
             }
@@ -1324,34 +1331,31 @@ int _fs_create_entry_from_path(const char *entry_path, EntryType type){
 	__cio_printf("  Creating (from path %s)...\n", entry_path);
 	__delay(STEP);
 	#endif
+	int i = 0;
 	
 	int result = -1;
 	if(entry_path[0] != '/'){
-		#ifdef DEBUG
 		clear_fs_buffer();
 		__strcpy(fs.buffer, fs.cwd);
 		__strcat(fs.buffer, entry_path);
+		#ifdef DEBUG
 		__cio_printf("Path is now relative\n");
+		__delay(STEP);
 		#endif
 	}
-	char *path = _km_page_alloc(1);
-	__strcpy(path, entry_path);
 
-    parse_path(path);
+    parse_path(entry_path);
 
-
-	DirectoryEntry *entry = _fs_find_entry_from_path(path);
+	__cio_printf("We are traversing, looking for %s\n", entry_path);
+	DirectoryEntry *entry = traverse_directory(&root_directory_entry, 0, entry_path);
 	if(entry != NULL){
-		__cio_printf("ERROR: File %s already exists at %s", entry->filename, path);
+		__cio_printf("ERROR: File %s already exists at %s", entry->filename, entry_path);
 		return -1;
 	}
 	// __cio_printf("FUTURE ENTRY: %s %d %d\n", entry->filename, entry->type, entry->size);
 
 	DirectoryEntry *parent = NULL;
 	DirectoryEntry *child = NULL;
-	
-	dr();
-	pl();
 	
 	if(nwd.num_dirs == 1){
 		parent = _fs_find_root_entry(nwd.dirs[0]);
@@ -1412,7 +1416,7 @@ int _fs_create_entry_from_path(const char *entry_path, EntryType type){
 			__cio_printf("Child %s is NULL, creating...\n", nwd.dirs[2]);
 			#endif
 			child = _km_page_alloc(1);
-			_fs_initialize_directory_entry(child, nwd.dirs[2], 0, DIRECTORY, 0, NULL, parent->depth+1);
+			_fs_initialize_directory_entry(child, nwd.dirs[2], 0, DIRECTORY, 0, NULL, parent->depth+1, nwd.path);
 			add_sub_entry(parent, child);
 		}
 	}
@@ -1465,7 +1469,7 @@ int _fs_create_entry_from_path(const char *entry_path, EntryType type){
 	}
 
 	#ifdef DEBUG
-	__cio_printf("  Creating (from path %s)!!!\n", path);
+	__cio_printf("  Creating (from path %s)!!!\n", entry_path);
 	__delay(STEP);
 	#endif
 	return 0;
@@ -1513,7 +1517,7 @@ int _fs_create_root_entry(const char *filename, EntryType type) {
 
     // Create a new directory entry
     DirectoryEntry *new_entry = _km_page_alloc(1);
-    _fs_initialize_directory_entry(new_entry, filename, 0, type, 0, NULL, 1);
+    _fs_initialize_directory_entry(new_entry, filename, 0, type, 0, NULL, 1, NULL);
 	
 	int result = add_sub_entry(_fs_find_root_entry("/"), new_entry);
 	if(result != 0){
@@ -1528,7 +1532,7 @@ int _fs_create_root_entry(const char *filename, EntryType type) {
     return 0; // Success
 }
 
-void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryType type, uint32_t cluster, DirectoryEntry *next, uint8_t depth) {
+void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryType type, uint32_t cluster, DirectoryEntry *next, uint8_t depth, char *path) {
     #ifdef DEBUG
     __cio_printf("Initializing entry %s...\n", filename);
     __delay(STEP);
@@ -1554,6 +1558,7 @@ void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename,
     entry->cluster = cluster;
     entry->next = next;
 	entry->depth = depth;
+	__strcpy(entry->path, path);
 
     // Allocate memory for the subdirectory
     entry->subdirectory = _km_page_alloc(1);

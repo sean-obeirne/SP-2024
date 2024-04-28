@@ -26,8 +26,9 @@ typedef struct DirectoryEntry {
     EntryType type;                      // Attribute of the file (e.g., file or directory)
     uint32_t cluster;                         // Starting cluster of the file's data
     struct DirectoryEntry *next;              // Pointer to the next directory entry in the linked list
-    struct Directory *subdirectory;           // Pointer to the subdirectory (if it's a directory)
 	uint8_t depth;
+    struct Directory *subdirectory;           // Pointer to the subdirectory (if it's a directory)
+	char path[MAX_PATH_LENGTH + 1];
 } DirectoryEntry;
 
 typedef struct Directory {
@@ -296,7 +297,7 @@ int _fs_print_entry(DirectoryEntry *entry, bool_t print_children);
 // int _fs_set_permissions(const char *filename, mode_t permissions);
 
 
-void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryType type, uint32_t cluster, DirectoryEntry *next, uint8_t depth);
+void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryType type, uint32_t cluster, DirectoryEntry *next, uint8_t depth, char *path);
 
 // Add more function prototypes as needed for your FAT32 filesystem implementation
 
