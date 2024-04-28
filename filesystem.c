@@ -481,6 +481,7 @@ void parse_path(const char *path, DeconstructedPath *dp) {
             dir_names_i++;
 
 			scratch_path[scratch_i] = path[path_i];
+			__memclr(filename, filename_i);
 			filename_i = -1;
 		}
 
@@ -492,7 +493,6 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 	}
 	// __cio_printf("This step, PRE NULL filename=%s and scratch_path=%s\n", filename, scratch_path);
 	if(path[path_i] == '\0'){
-		__memclr(filename, filename_i);
 
 		filename[filename_i] = '\0';
 		scratch_path[scratch_i] = '\0';
