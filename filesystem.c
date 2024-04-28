@@ -560,14 +560,14 @@ void print_parsed_path(DeconstructedPath dp) {
 		#endif
 		return;
 	}
-	__cio_printf("Path: %s\n", dp.path);
-	__cio_printf("Number of directories: %d\n", dp.num_dirs);
-    __cio_printf("File name: %s\n", dp.filename);
+	__cio_printf("  Path: %s\n", dp.path);
+	__cio_printf("  Number of directories: %d\n", dp.num_dirs);
+    __cio_printf("  File name: %s\n", dp.filename);
     for (int i = 0; i < dp.num_dirs; i++) {
-        __cio_printf("Directory %d: %s\n", i + 1, dp.dirs[i]);
+        __cio_printf("  Directory %d: %s\n", i + 1, dp.dirs[i]);
     }
     for (int i = 0; i < dp.num_dirs; i++) {
-        __cio_printf("PATH %d: %s\n", i + 1, dp.paths[i]);
+        __cio_printf("  PATH %d: %s\n", i + 1, dp.paths[i]);
     }
 	#ifdef DEBUG
 	__cio_printf("Printing parsed path!!!\n");
@@ -577,7 +577,7 @@ void print_parsed_path(DeconstructedPath dp) {
 
 int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
 	#ifdef DEBUG
-	__cio_printf("Adding sub entry to %s...\n", dest->filename);
+	__cio_printf("Adding sub entry %s to %s...\n", insert->filename, dest->filename);
 	__delay(STEP);
 	#endif
 
@@ -1006,6 +1006,152 @@ int _fs_mount( void ) {
 	return 0;
 }
 
+
+DirectoryEntry *traverse_directory(DirectoryEntry *directory_entry, int depth, const char *path_to_search) {
+    // Check if the directory entry pointer itself is NULL
+    if (directory_entry == NULL) {
+        return NULL;
+    }
+
+    #ifdef DEBUG
+    __cio_printf("Traversing directory with depth: %d\n", depth);
+    #endif
+
+    // Recursively search for the filename within the directory
+    for (int i = 0; i < directory_entry->subdirectory->num_files; i++) {
+        DirectoryEntry *sub_entry = directory_entry->subdirectory->files[i];
+        if (sub_entry != NULL) {
+            // Check if the filename matches the one we're searching for
+            if (__strcmp(sub_entry->filename, path_to_search) == 0) {
+                // If found, print the filename and return the directory entry
+                for (int j = 0; j < depth; j++) {
+                    __cio_printf("  ");
+                }
+                __cio_printf("%s\n", sub_entry->filename);
+                return sub_entry;
+            }
+
+            // Check if it's a subdirectory
+            if (sub_entry->type == DIRECTORY && sub_entry->subdirectory != NULL) {
+                // Recursively search within the subdirectory
+                DirectoryEntry *found_entry = traverse_directory(sub_entry, depth + 1, path_to_search);
+                if (found_entry != NULL) {
+                    return found_entry;
+                }
+            }
+        }
+    }
+
+    // If the filename is not found, return NULL
+    return NULL;
+}
+
+#if 0
+DirectoryEntry *traverse_directory(DirectoryEntry *entry, int depth) {
+    // Check if the directory pointer itself is NULL
+    if (entry == NULL) {
+        return;
+    }
+
+    #ifdef DEBUG
+    __cio_printf("Traversing directory with depth: %d\n", depth);
+    #endif
+
+	DirectoryEntry *dest = fs.disk.request_space(sizeof(DirectoryEntry));
+
+    // Populate the Directory with details
+    // directory->depth = depth; // Example: Assigning the depth attribute
+
+    // Recursively traverse subdirectories
+    for (int i = 0; i < entry->subdirectory->num_files; i++) {
+        DirectoryEntry *sub_entry = entry->subdirectory->files[i];
+        if (sub_entry != NULL) {
+            // Print the filename with indentation based on depth
+            for (int j = 0; j < depth; j++) {
+                __cio_printf("  ");
+            }
+            __cio_printf("%s\n", sub_entry->filename);
+
+            // Check if it's a subdirectory
+            if (sub_entry->type == DIRECTORY && sub_entry->subdirectory != NULL) {
+				_fs_initialize_directory_entry(dest, );
+                traverse_directory(sub_entry->subdirectory, depth + 1);
+            }
+        }
+    }
+
+    // No need to traverse remaining entries in the same directory level
+}
+#endif
+
+
+
+#if 0
+DirectoryEntry *traverse_directory(DirectoryEntry *directory, int depth, const char *path_to_search) {
+    // Check if the directory pointer itself is NULL
+    if (directory == NULL || __strcmp(directory->filename, "") == 0) {
+        return -1;
+    }
+
+    #ifdef DEBUG
+    __cio_printf("Traversing directory: %s, depth: %d\n", directory->filename, depth);
+    #endif
+
+    // Populate the DirectoryEntry with details
+    // directory->depth = depth; // Example: Assigning the depth attribute
+
+    // Recursively traverse subdirectories
+    for (int i = 0; i < directory->subdirectory->num_files; i++) {
+        DirectoryEntry *sub_entry = directory->subdirectory->files[i];
+        if (sub_entry != NULL) {
+            traverse_directory(sub_entry, depth + 1);
+        }
+    }
+
+    // Recursively traverse next entry at the same level
+    traverse_directory(directory + 1, depth);
+	return 0;
+}
+#endif
+#if 0
+void traverse_directory(DirectoryEntry *directory, int depth) {
+    if (directory == NULL || !__strcmp(directory->filename, "\0")){
+        return;
+    }
+	#ifdef DEBUG
+	__cio_printf("Traversing, depth %d, starting from %s...\n", depth, directory->filename);
+	__delay(STEP);
+	#endif
+
+    // Print the directory name with indentation based on depth
+    for (int i = 0; i < depth; i++) {
+        __cio_printf("  ");
+    }
+    __cio_printf("%s\n", directory->filename);
+
+    // Recursively traverse subdirectories
+    if (directory->subdirectory != NULL) {
+		for (int i = 0; i < directory->subdirectory->num_files; i++) {
+			DirectoryEntry *sub_entry = directory->subdirectory->files[i];
+			if(sub_entry == NULL){
+				__cio_printf("ERROR: sub_entry is NULL\n");
+				return;
+			}
+			// __cio_printf("recursing I guess???\n");
+			__delay(MOMENT);
+			traverse_directory(sub_entry, depth + 1);
+		}
+	}
+	// __cio_printf("FINALLY ACTUALLY RECURSING\n");
+	__delay(MOMENT);
+    // Traverse remaining entries in the same directory level
+    traverse_directory(directory + 1, depth);
+	#ifdef DEBUG
+	__cio_printf("Traversing, depth %d, starting from %s!!!\n", depth, directory->filename);
+	__delay(STEP);
+	#endif
+}
+#endif
 DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 	#ifdef DEBUG
 	__cio_printf("  Finding (from path %s)...\n", path);
@@ -1619,11 +1765,9 @@ int _fs_print_entry(DirectoryEntry *entry, bool_t print_children){
 	if(entry->type == DIRECTORY){
 		char *header = _km_page_alloc(1);
 		__memclr(header, BLOCK_SIZE);
-		__strcat(header, "Directory: ");
+		__strcat(header, " Directory: ");
 		__strcat(header, entry->filename);
-		for(int i = 0; i < entry->depth; i++){
-			__cio_putchar(' ');
-		}
+		__cio_putchar(' ');
 		pvl(header, '-', 1); // do this or the line below
 		// __cio_printf("%s\n", header);
 		if(print_children){

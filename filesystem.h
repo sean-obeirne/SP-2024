@@ -183,7 +183,8 @@ int dir_exists(const char *path);
 ** @param callback Pointer to the callback function to be called for each directory.
 ** @return 0 on success, -1 on failure.
 */
-int traverse_directory_tree(const char *root_path, void (*callback)(const char *path));
+DirectoryEntry *traverse_directory(DirectoryEntry *directory_entry, int depth, const char *path_to_search);
+// void traverse_directory(Directory *directory, int depth);
 
 #endif // END Directories
 
