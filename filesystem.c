@@ -114,7 +114,7 @@ void run_command(char **args, int arg_count){
 		__sprint(fs.buffer, "/%s%s", fs.cwd, args[1]);
 		dump_fs_buffer();
 		// __delay(100);
-		_fs_print_entry(_fs_find_entry_from_path(args[1]), false);
+		// _fs_print_entry(_fs_find_entry_from_path(args[1]), false);
 		// __delay(100);
 	}		
 }
@@ -344,8 +344,8 @@ int read_sector( int sector_number, void *buffer ){
 #if 1  // BEG Helper functions
 void adjust_cwd( DeconstructedPath *cwd, const char *path ){
 	__cio_printf("ADJUSTING.............\n");
-	parse_path(path, cwd);
-	print_parsed_path(*cwd);
+	// parse_path(path, cwd);
+	// print_parsed_path(*cwd);
 }
 
 // Print the header for the whole filesystem application.
@@ -461,7 +461,6 @@ void parse_path(const char *path, DeconstructedPath *dp) {
 		scratch_path[scratch_i] = path[path_i];
 
 		if(path[path_i] == '/'){
-			__cio_printf("printing paths: %s\n", filename);
 			if(path_i == 0 || (dir_names_i == 0 && path_i < 3)){ // be cautious about '../'
 				filename[filename_i] = '/';
 				filename[filename_i + 1] = '\0';
@@ -741,9 +740,9 @@ int change_dir(const char *path){
 			merge_path(dp.path);
 			__cio_printf("GOT IT %s, \n", fs.cwd);
 		}
-		_fs_print_entry(_fs_find_entry_from_path(fs.cwd), true);
+		// _fs_print_entry(_fs_find_entry_from_path(fs.cwd), true);
 	}
-	_fs_print_entry(_fs_find_entry_from_path("/"), true);
+	// _fs_print_entry(_fs_find_entry_from_path("/"), true);
 
 	// dr();
 	
@@ -1204,7 +1203,8 @@ int _fs_create_entry_from_path(const char *entry_path, EntryType type){
 	DirectoryEntry *parent = NULL;
 	DirectoryEntry *child = NULL;
 	
-	print_parsed_path(dp);
+	// print_parsed_path(dp);
+	__cio_printf("HIT IT IN FS\n");
 	dr();
 	pl();
 	
@@ -1310,7 +1310,7 @@ int _fs_create_entry_from_path(const char *entry_path, EntryType type){
 			}
 			child = _fs_find_entry_from_path(dp.paths[dp.num_dirs - 1]);
 			__cio_printf("FOUND CHILD \n");
-			_fs_print_entry(child, true);
+			// _fs_print_entry(child, true);
 		}
 		
 		if(child == NULL){
@@ -1417,9 +1417,13 @@ int _fs_create_entry( EntryType type ){
 				parent = _fs_find_root_entry(nwd.dirs[1]);
 				break;
 			default:
-				parent = _fs_find_entry_from_path(nwd.paths[nwd.curr++]);
+				parent = _fs_find_entry_from_path(nwd.paths[nwd.curr]);
 		}
+		nwd.curr++;
+		// _fs_print_entry(parent, true);
 	}
+	__cio_printf("HIT IT IN CREATE\n");
+	pl();
 	int result = add_sub_entry(_fs_find_root_entry("/"), new_entry);
 	if(result != 0){
 		
