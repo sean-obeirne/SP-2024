@@ -23,7 +23,7 @@ typedef enum PathType {
 typedef struct DirectoryEntry {
     char filename[MAX_FILENAME_LENGTH + 1];   // Name of the file or directory
     uint32_t size;                            // Size of the file in bytes
-    EntryType type;                      // Attribute of the file (e.g., file or directory)
+    EntryType type;                           // File or directory
     uint32_t cluster;                         // Starting cluster of the file's data
     struct DirectoryEntry *next;              // Pointer to the next directory entry in the linked list
 	uint8_t depth;
@@ -45,6 +45,7 @@ typedef struct DeconstructedPath {
     char *paths[MAX_FILENAME_LENGTH];  // Array to store path entries
 	PathType path_type;
 	uint32_t curr; // current location in the paths array
+	EntryType entry_type;
 } DeconstructedPath; // TODO SEAN: to fix, check for 'first /' not '/ first
 
 typedef struct FATEntry {
@@ -236,6 +237,10 @@ int _fs_read_file(const char *filename/*, void *buffer, size_t size, off_t offse
  */
 int _fs_write_file(const char *path, const void *data/*, size_t size, off_t offset*/);
 
+DirectoryEntry *_fs_create_file(const char *path);
+
+DirectoryEntry *_fs_create_dir(const char *path);
+
 /*
  ** Create a new file in the root of filesystem.
  ** @param filename Name of the file to create.
@@ -297,7 +302,7 @@ int _fs_print_entry(DirectoryEntry *entry, bool_t print_children);
 // int _fs_set_permissions(const char *filename, mode_t permissions);
 
 
-void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryType type, uint32_t cluster, DirectoryEntry *next, uint8_t depth, char *path);
+void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryType type, uint32_t cluster, DirectoryEntry *next, uint8_t depth, const char *path);
 
 // Add more function prototypes as needed for your FAT32 filesystem implementation
 

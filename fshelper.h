@@ -33,7 +33,7 @@
 ////////////////
 // Pause time definitions
 #define SLEEP_FACTOR 2
-#define STEP 1
+#define STEP 10
 #define FIVER 5
 #define CSTEP 1 * SLEEP_FACTOR
 #define MOMENT 3 * SLEEP_FACTOR
@@ -60,6 +60,7 @@ void ph(const char *header);
 void pl(void);
 void pl_debug(void);
 void pln(void);
+void plnn(void);
 void plw(char line_char);
 void plh(const char *header, char line_char);
 void phl(const char *header);
@@ -85,10 +86,11 @@ void merge_path(char *path);
 char *strip_path(const char *path);
 void parse_path(const char *path);
 void test_parse_path(const char *path);
-void print_parsed_path(DeconstructedPath dp);
+void print_parsed_path( void );
 
-int create_sub_entry(DirectoryEntry *parent, const char *filename, EntryType type);
+DirectoryEntry *create_sub_entry(DirectoryEntry *parent, const char *filename, EntryType type);
 int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert);
+DirectoryEntry *find_or_create_entry( void );
 
 int add_fat_entry(uint32_t next_cluster);
 
