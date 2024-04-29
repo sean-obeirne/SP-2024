@@ -237,24 +237,19 @@ int _fs_read_file(const char *filename/*, void *buffer, size_t size, off_t offse
  */
 int _fs_write_file(const char *path, const void *data/*, size_t size, off_t offset*/);
 
-DirectoryEntry *_fs_create_file(const char *path);
-
-DirectoryEntry *_fs_create_dir(const char *path);
-
-/*
- ** Create a new file in the root of filesystem.
- ** @param filename Name of the file to create.
- ** @return 0 on success, -1 on failure.
- */
-int _fs_create_root_entry(const char *filename, EntryType type);
-
 /*
  ** Create a new file in the filesystem.
  ** @param path Path of the entry to create.
- ** @param type Type of entry (1 == file, 2 == directory)
- ** @return 0 on success, -1 on failure.
+ ** @return new file, NULL on failure
  */
-int _fs_create_entry_from_path(const char *path, EntryType type);
+DirectoryEntry *_fs_create_file(const char *path);
+
+/*
+ ** Create a new directory in the filesystem.
+ ** @param path Path of the entry to create.
+ ** @return new directory, NULL on failure
+ */
+DirectoryEntry *_fs_create_dir(const char *path);
 
 /*
  ** Delete a file from the filesystem.
