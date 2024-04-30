@@ -114,7 +114,7 @@ void run_command(char **args, int arg_count){
 		__sprint(fs.buffer, "/%s%s", fs.cwd, args[1]);
 		dump_fs_buffer();
 		// __delay(100);
-		_fs_print_entry(_fs_find_entry_from_path(args[1]), false);
+		_fs_print_entry(_fs_find_entry(args[1]), false);
 		// __delay(100);
 	}		
 }
@@ -851,15 +851,15 @@ int change_dir(const char *path){
 		clear_fs_buffer();
 		__strcat(fs.cwd, nwd.path);
 		__cio_printf("GOT IT JK %s, \n", fs.cwd);
-		if((entry = _fs_find_entry_from_path(fs.cwd)) == 0){
+		if((entry = _fs_find_entry(fs.cwd)) == 0){
 			__cio_printf("GOT IT %s, \n", fs.cwd);
 			__cio_printf("GOT IT %s, \n", entry->filename);
 			merge_path(nwd.path);
 			__cio_printf("GOT IT %s, \n", fs.cwd);
 		}
-		_fs_print_entry(_fs_find_entry_from_path(fs.cwd), true);
+		_fs_print_entry(_fs_find_entry(fs.cwd), true);
 	}
-	_fs_print_entry(_fs_find_entry_from_path("/"), true);
+	_fs_print_entry(_fs_find_entry("/"), true);
 
 	// dr();
 	
@@ -903,7 +903,7 @@ int list_dir_contents(const char *path, bool_t box) { //TODO make this more line
 		return -1;
 	}
 
-	DirectoryEntry *entry = _fs_find_entry_from_path(path);
+	DirectoryEntry *entry = _fs_find_entry(path);
 	if (entry == NULL){
 		__cio_printf("ERROR: Finding %s returned NULL value\n", path);
 		return -1;
@@ -1270,190 +1270,20 @@ void traverse_directory(DirectoryEntry *directory, int depth) {
 	#endif
 }
 #endif
-DirectoryEntry *_fs_find_entry_from_path(const char *path) {
-	#ifdef DEBUG
-	__cio_printf("  Finding (from path %s)...\n", path);
-	__delay(STEP);
-	#endif
-	
-    parse_path(path);
-
-
-	DirectoryEntry *parent = NULL;
-	DirectoryEntry *child = NULL;
-	int i = 1;
-	int result = -1;
-	while(i < nwd.num_dirs){
-		parent = &root_directory_entry;
-		// result = _fs_create_root_entry(nwd.dirs[i], DIRECTORY);
-		if( result == NULL ){
-			__cio_printf("ERROR: Unable to create root entry %s for child\n", nwd.dirs[i]);
-		}
-		child = traverse_directory(child, 0, path);
-		__cio_printf("Parent: %s,  Child: %s", parent->filename, child->filename);
-	
-
-
-		i++;
-		break;
-	}
-	if(nwd.num_dirs == 0){
-		__cio_printf("ERROR: Root issue, num_dirs should never be 0, due to root.\n");
-		return NULL;
-	}
-
-	if(nwd.num_dirs == 1){
-		parent = _fs_find_root_entry(nwd.dirs[0]);
-		if (parent == NULL){
-			// __cio_printf(" _fs_find_entry_from_path(%s) failed:\n   Parent %s not found\n", path, nwd.dirs[0]);
-			#ifdef DEBUG
-			__cio_printf("  Finding (from path %s)---\n", path);
-			__delay(STEP);
-			#endif
-			return NULL;
-		}
-	}
-	else if(nwd.num_dirs == 2){
-		parent = _fs_find_root_entry(nwd.dirs[0]);
-		child = _fs_find_root_entry(nwd.dirs[1]);
-		if (parent == NULL){
-			// __cio_printf(" _fs_find_entry_from_path(%s) failed:\n   Parent %s not found\n", path, nwd.dirs[0]);
-			#ifdef DEBUG
-			__cio_printf("  Finding (from path %s)---\n", path);
-			__delay(STEP);
-			#endif
-			return NULL;
-		}
-		if (child == NULL){
-			// __cio_printf(" _fs_find_entry_from_path(%s) failed:\n   Child of %s, \"%s\", not found\n", path, nwd.dirs[0], nwd.dirs[1]);
-			#ifdef DEBUG
-			__cio_printf("  Finding (from path %s)---\n", path);
-			__delay(STEP);
-			#endif
-			return NULL;
-		}
-	}
-	
-	else if (nwd.num_dirs == 3){
-		parent = _fs_find_root_entry(nwd.dirs[1]);
-		if (parent == NULL){
-			// __cio_printf(" _fs_find_entry_from_path(%s) failed:\n  Parent root entry %s not found\n", path, nwd.dirs[1]);
-			#ifdef DEBUG
-			__cio_printf("  Finding (from path %s)---\n", path);
-			__delay(STEP);
-			#endif
-			return NULL;
-		}
-		#ifdef DEBUG
-		__cio_printf("Looking for child at %s\n", nwd.paths[2]);
-		#endif
-		child = NULL;
-		for(int i = 0; i < parent->subdirectory->num_files; i++){
-			if (__strcmp(parent->subdirectory->files[i]->filename, nwd.dirs[2]) == 0 ){ // found child!
-				child = parent->subdirectory->files[i];
-			}
-		}
-		if(child == NULL){
-			#ifdef DEBUG
-			__cio_printf("  Finding (from path %s)---\n", path);
-			__delay(STEP);
-			#endif
-			return NULL;
-		}
-	}
-	else if (nwd.num_dirs >= 4){
-		parent = _fs_find_entry_from_path(nwd.paths[nwd.num_dirs - 2]);
-		if (parent == NULL){
-			#ifdef DEBUG
-			__cio_printf("  Finding (from path %s)---\n", path);
-			__delay(STEP);
-			#endif
-			return NULL;
-		}
-		__cio_printf("Looking for child at %s\n", nwd.paths[nwd.num_dirs - 2]);
-		child = _fs_find_entry_from_path(nwd.paths[nwd.num_dirs - 2]);
-		if(child == NULL){
-			for(int i = 0; i < parent->subdirectory->num_files; i++){
-				if (__strcmp(parent->subdirectory->files[i]->filename, nwd.dirs[nwd.num_dirs - 1]) == 0 ){ // found child!
-					child = parent->subdirectory->files[i];
-				}
-			}
-		}
-		if(child == NULL){
-			#ifdef DEBUG
-			__cio_printf("  Finding (from path %s)---\n", path);
-			__delay(STEP);
-			#endif
-			return NULL;
-		}
-	}
-
-	#ifdef DEBUG
-	__cio_printf("  Finding (from path %s)!!!\n", path);
-	__delay(STEP);
-	#endif
-	return child;
-
-
-
-	// 	if (curr_parent->type == FILE){
-	// 		__cio_printf("ERROR: Type mismatch, found parent \"file\" %s while looking for directory\n", curr_parent->filename);
-	// 	}
-	// 	if (__strcmp(curr_entry->filename, nwd.filename) == 0){ //TODO SEAN: neds to be smarter than just filename
-	// 		__cio_printf("Found matching filenames: %s %s\n", curr_entry->filename, nwd.filename);
-	// 		#ifdef DEBUG
-	// 		__cio_printf("Finding (from path %s)!!!\n", path);
-	// 		#endif
-	// 		break;
-	// 	}
-	// 	// __cio_printf("WE will now go to path %s", nwd.paths[i]);
-	// 	curr_entry = _fs_find_entry_from_path(nwd.paths[i]);
-	// }
-	// __cio_printf("RETURNING\n");
-	// ;
-	// return curr_entry;
-}
-
-DirectoryEntry *_fs_find_root_entry(const char *filename) {
-	if (__strcmp("/", filename) == 0){
-		return &root_directory_entry;
-	}
-	if (filename[0] == '/'){
-		__cio_printf("Path given, filename expected. Finding entry from path %s\n", filename);
-		return _fs_find_entry_from_path(filename);
-	}
-
-	#ifdef DEBUG
-	__cio_printf("Finding %s in root...\n", filename);
-	__delay(STEP);
-	#endif
 
 	// Search for the file in the root directory
-	DirectoryEntry *entry = NULL;
-	for (int i = 0; i < ROOT_DIRECTORY_ENTRIES; i++) {
-		if (__strcmp(root_directory.files[i]->filename, "") != 0){
-			// __cio_printf("COMPING %s WITH %s\n", root_directory.files[i]->filename, filename);
-			// __cio_printf("Lets see... %s\n", root_directory.files[i]);
-			if (__strcmp(root_directory.files[i]->filename, filename) == 0) {
-				// __cio_printf("%d\n", i);
-				entry = root_directory.files[i];
-				break;
-			}
-		} 
-	}
-
-
-	#ifdef DEBUG
-	if(entry == NULL){
-		__cio_printf("Finding %s in root---\n", filename);
-	} else{
-		__cio_printf("Finding %s in root!!!\n", filename);
-	}
-	__delay(STEP);
-	#endif
-
-	return entry;
-}
+	// DirectoryEntry *entry = NULL;
+	// for (int i = 0; i < ROOT_DIRECTORY_ENTRIES; i++) {
+	// 	if (__strcmp(root_directory.files[i]->filename, "") != 0){
+	// 		// __cio_printf("COMPING %s WITH %s\n", root_directory.files[i]->filename, filename);
+	// 		// __cio_printf("Lets see... %s\n", root_directory.files[i]);
+	// 		if (__strcmp(root_directory.files[i]->filename, filename) == 0) {
+	// 			// __cio_printf("%d\n", i);
+	// 			entry = root_directory.files[i];
+	// 			break;
+	// 		}
+	// 	} 
+	// }
 
 DirectoryEntry *_fs_find_entry(const char *path){
 	#ifdef DEBUG
@@ -1578,8 +1408,8 @@ int _fs_rename_entry(const char *old_filename, const char *new_filename){
 	__delay(STEP);
 	#endif
 
-	DirectoryEntry *src = _fs_find_root_entry(old_filename);
-	DirectoryEntry *dest = _fs_find_root_entry(new_filename);
+	DirectoryEntry *src = _fs_find_entry(old_filename);
+	DirectoryEntry *dest = _fs_find_entry(new_filename);
 	if(dest != NULL){
 		__cio_printf("ERROR: File %s already exists\n", new_filename);
 		return -1;
@@ -1594,7 +1424,7 @@ int _fs_delete_entry(const char *filename){
 	__delay(STEP);
 	#endif
 
-	DirectoryEntry *entry = _fs_find_root_entry(filename);
+	DirectoryEntry *entry = _fs_find_entry(filename);
 	if(entry == NULL){
 		__cio_printf("ERROR: File %s does not exist", filename);
 		return -1;
@@ -1616,7 +1446,7 @@ int _fs_open_file(const char *filename, const char *mode){
 		return -1;
 	}
 
-	DirectoryEntry *entry = _fs_find_root_entry(filename);
+	DirectoryEntry *entry = _fs_find_entry(filename);
 	if (entry == NULL) {
 		__cio_printf("ERROR: Filename %s not found\n", filename);
 		return -1;
@@ -1635,7 +1465,7 @@ int _fs_read_file(const char *filename) {
 	// Read data from the specified file into fs.buffer
 
 	// Search for the file in the root directory
-	DirectoryEntry *entry = _fs_find_root_entry(filename);
+	DirectoryEntry *entry = _fs_find_entry(filename);
 	if (entry == NULL) {
 		__cio_printf("ERROR: filename %s NOT found!\n", filename);
 		return -1;
@@ -1670,7 +1500,7 @@ int _fs_write_file(const char *path, const void *data) {
 	__delay(STEP);
 	#endif
 
-	DirectoryEntry *entry = _fs_find_entry_from_path(path);
+	DirectoryEntry *entry = _fs_find_entry(path);
 
 	// If the file doesn't exist, return an error
 	if (entry == NULL) {

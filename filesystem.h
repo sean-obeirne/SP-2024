@@ -210,20 +210,6 @@ int _fs_init(void);
 int _fs_mount(void);
 
 /*
- ** Find a DirectoryEntry from root.
- ** @param filename of the file to find.
- ** @return DirectoryEntry with filename in root
- */
-DirectoryEntry *_fs_find_root_entry(const char *filename);
-
-/*
- ** Find a DirectoryEntry
- ** @param path of the file to find.
- ** @return DirectoryEntry with path "path"
- */
-DirectoryEntry *_fs_find_entry_from_path(const char *path);
-
-/*
  ** Read data from a file in the filesystem.
  ** @param filename Name of the file to read.
  ** @param buffer Pointer to the buffer to store the read data.
@@ -295,8 +281,9 @@ int _fs_open_file(const char *filename, const char *mode);
 int _fs_close_file(const char *filename);
 
 /*
- ** Find a DirectoryEntry * for a given filename.
+ ** Print a DirectoryEntry *
  ** @param filename of the file to print.
+ ** @param print_children true for recursion
  ** @return 0 on success, -1 on failure.
  */
 int _fs_print_entry(DirectoryEntry *entry, bool_t print_children);
