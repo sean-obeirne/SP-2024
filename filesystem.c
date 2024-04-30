@@ -32,15 +32,15 @@ DeconstructedPath cwd = {
 	.curr = 0,
 	.filename = "/",
 	.num_dirs = 0,
-	.path_type = ABSOLUTE_PATH,
+	.path_type = ABSOLUTE,
 };
 
 DeconstructedPath nwd = { // "New" working directory
-	.path = "/",
-	.curr = 0,
 	.filename = "/",
+	.path = "/",
 	.num_dirs = 0,
-	.path_type = ABSOLUTE_PATH,
+	.curr = 0,
+	.path_type = ABSOLUTE,
 };
 
 #endif // SETUP
@@ -402,7 +402,33 @@ void merge_path(char *path) {
 	__cio_printf("%s\n", fs.cwd_dp);
 }
 
+int clean_nwd(){
+	// Reset all fields of nwd
+	nwd.num_dirs = 0;
+    nwd.curr = 0;
+    // nwd.path_type = ABSOLUTE;
+    // nwd.entry_type = DIRECTORY;
+    // nwd.op_type = FIND;
+
+    // Clear the filename and path arrays
+    __memclr(nwd.filename, MAX_FILENAME_LENGTH);
+    __memclr(nwd.path, MAX_PATH_LENGTH);
+
+    // Clear the dirs and paths arrays
+    for (int i = 0; i < MAX_FILENAME_LENGTH; i++) {
+        if (nwd.dirs[i] != NULL) {
+            __memclr(nwd.dirs[i], __strlen(nwd.dirs[i]));
+            nwd.dirs[i] = NULL;
+        }
+        if (nwd.paths[i] != NULL) {
+            __memclr(nwd.paths[i], __strlen(nwd.paths[i]));
+            nwd.paths[i] = NULL;
+        }
+    }
+}
+
 void parse_path(const char *path) {
+	clean_nwd();
 	#ifdef DEBUG
 	__cio_printf("Deconstructing path %s...\n", path);
 	__delay(STEP);
@@ -420,7 +446,7 @@ void parse_path(const char *path) {
 		nwd.num_dirs = 1;
 		nwd.dirs[0] = "/";
 		nwd.paths[0] = "/";
-		nwd.path_type = ABSOLUTE_PATH;
+		nwd.path_type = ABSOLUTE;
 		nwd.curr = 0;
 		nwd.entry_type = DIRECTORY;
 		#ifdef DEBUG
@@ -433,8 +459,8 @@ void parse_path(const char *path) {
 		nwd.filename[0] = '\0';
 		nwd.num_dirs = 0;
 		clear_fs_buffer();
-		int pt = path[0] == '/' ? ABSOLUTE_PATH : RELATIVE_PATH;
-		if(pt == RELATIVE_PATH){
+		int pt = path[0] == '/' ? ABSOLUTE : RELATIVE;
+		if(pt == RELATIVE){
 			__strcpy(fs.buffer, cwd.path);
 			__strcat(fs.buffer, path);
 		}
@@ -592,7 +618,7 @@ int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
 		return -1;
 	}
 	if(dest->type == FILE){
-		__cio_printf("ERROR: Adding DirectoryEntry %s to a file, %s, aborting\n", dest->filename, insert->filename);
+		__cio_printf("ERROR: Adding DirectoryEntry %s to a file, %s, aborting\n", insert->filename, dest->filename);
 		return -1;
 	}
 	if(dest->subdirectory == NULL){
@@ -602,7 +628,6 @@ int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
 	// dest->subdirectory->files[dest->subdirectory->num_files++] = insert;
 	dest->subdirectory->files[dest->subdirectory->num_files] = insert;
 	dest->subdirectory->num_files++;
-	
 	#ifdef DEBUG
 	__cio_printf("Adding sub entry %s to %s!!!\n", insert->filename, dest->filename);
 	__delay(STEP);
@@ -619,11 +644,11 @@ DirectoryEntry *create_sub_entry(DirectoryEntry *parent, const char *filename, E
 	
 	#ifdef DEBUG
 	__cio_printf("Creating %s, a sub entry of %s...\n", filename, parent->filename);
-	__delay(STEP);
+	__delay(SHORT_PAUSE);
 	#endif
 
 
-	DirectoryEntry *child = _km_page_alloc(1);
+	DirectoryEntry *child = fs.disk.request_space(sizeof(DirectoryEntry));
 
 	_fs_initialize_directory_entry(child, filename, 0, type, 0, NULL, parent->depth+1, nwd.paths[parent->depth+1]);
 
@@ -692,37 +717,43 @@ DirectoryEntry *find_or_create_entry_recursive(DirectoryEntry *current_dir, int 
 		__cio_printf("Current dir is null or depth is negative\n");
         return NULL;
     }
-	__cio_printf("printing current dir:\n");
-	_fs_print_entry(current_dir, false);
-
-	__cio_printf("Getting subdir\n");
-    // Find the entry corresponding to the parsed filename in the current directory
-    DirectoryEntry *entry = get_sub_entry(current_dir, nwd.dirs[depth]);
-	if(nwd.num_dirs - 1 < depth){
-		__cio_printf("Time to dip!\n");
-		return NULL;
-	}
-    // If the entry doesn't exist, create itfilename
-    if (entry == NULL) {
-		__cio_printf("Creating sub dir\n");
-        // Create the entry based on whether it's a directory or a file
-		if(depth < nwd.num_dirs - 1){
-        	entry = create_sub_entry(current_dir, nwd.dirs[depth], DIRECTORY); // Implement this function as well
+	if (depth == 0){
+		if(nwd.entry_type == FILE && depth == nwd.num_dirs - 1){
+			create_sub_entry(&root_directory_entry, nwd.dirs[depth], nwd.entry_type);
 		}
 		else{
-        	entry = create_sub_entry(current_dir, nwd.dirs[depth], nwd.entry_type); // Implement this function as well
+			create_sub_entry(&root_directory_entry, nwd.dirs[depth], DIRECTORY);
+		}
+	}
+
+    // Find the entry corresponding to the parsed filename in the current directory  \/ - /				\/ - here
+	DirectoryEntry *entry = NULL;
+	// if(depth == 0){
+	// 	entry = get_sub_entry(&root_directory_entry, nwd.dirs[depth]);
+	// }
+	// else{
+		entry = get_sub_entry(current_dir, nwd.dirs[depth+1]);
+	// }
+	// If the entry doesn't exist, create it
+	if (entry == NULL && nwd.op_type == CREATE) {
+		// Create the entry based on whether it's a directory or a file
+		if(depth < nwd.num_dirs - 1){
+			entry = create_sub_entry(current_dir, nwd.dirs[depth], DIRECTORY);
+		}
+		else{
+			entry = create_sub_entry(current_dir, nwd.dirs[depth], nwd.entry_type);
 		}
 
-        // If the entry couldn't be created, return NULL
-        if (entry == NULL) {
+		// If the entry couldn't be created, return NULL
+		if (entry == NULL) {
 			__cio_printf("ERROR: Failed to create sub entry of %s\n", current_dir->filename);
-            return NULL;
-        }
+			return NULL;
+		}
     }
+    
 
-	__cio_printf("Let's check!\n");
     // If there are more components in the path, recursively traverse
-    if (nwd.num_dirs - 1 > depth) {
+    if (nwd.num_dirs > depth+1) {
         return find_or_create_entry_recursive(entry, depth + 1);
     }
 
@@ -740,9 +771,7 @@ DirectoryEntry *find_or_create_entry() {
 	__delay(STEP);
 	#endif
     // Start the traversal from the root directory
-	print_parsed_path();
-	pln();
-    DirectoryEntry *root_dir_entry = &root_directory_entry; // Implement this function based on your filesystem structure
+    DirectoryEntry *root_dir_entry = &root_directory_entry;
     DirectoryEntry *entry = find_or_create_entry_recursive(root_dir_entry, 0);
 	
 	#ifdef DEBUG
@@ -750,7 +779,6 @@ DirectoryEntry *find_or_create_entry() {
 	__delay(STEP);
 	#endif
 	return entry;
-
 }
 #endif // END Helper functions
 
@@ -816,10 +844,10 @@ int change_dir(const char *path){
 	DirectoryEntry *entry;
 	parse_path(path);
 
-	if(nwd.path_type == ABSOLUTE_PATH){
+	if(nwd.path_type == ABSOLUTE){
 		__strcpy(fs.cwd, nwd.path);
 	}
-	else if(nwd.path_type == RELATIVE_PATH){
+	else if(nwd.path_type == RELATIVE){
 		clear_fs_buffer();
 		__strcat(fs.cwd, nwd.path);
 		__cio_printf("GOT IT JK %s, \n", fs.cwd);
@@ -1257,7 +1285,7 @@ DirectoryEntry *_fs_find_entry_from_path(const char *path) {
 	int result = -1;
 	while(i < nwd.num_dirs){
 		parent = &root_directory_entry;
-		result = _fs_create_root_entry(nwd.dirs[i], DIRECTORY);
+		// result = _fs_create_root_entry(nwd.dirs[i], DIRECTORY);
 		if( result == NULL ){
 			__cio_printf("ERROR: Unable to create root entry %s for child\n", nwd.dirs[i]);
 		}
@@ -1427,35 +1455,75 @@ DirectoryEntry *_fs_find_root_entry(const char *filename) {
 	return entry;
 }
 
+DirectoryEntry *_fs_find_entry(const char *path){
+	#ifdef DEBUG
+	__cio_printf("Finding entry at %s...\n", path);
+	__delay(STEP);
+	#endif
+	
+	parse_path(path);
+	nwd.op_type = FIND;
+
+	DirectoryEntry *entry = find_or_create_entry();
+	// _fs_print_entry(entry, true);
+	
+	#ifdef DEBUG
+	__cio_printf("Finding entry at %s!!!\n", path);
+	__delay(STEP);
+	#endif
+	
+	return entry;
+}
+
 // TODO handle relative paths
 // TODO Parameter error validation
 
 DirectoryEntry *_fs_create_file(const char *path){
+	#ifdef DEBUG
+	__cio_printf("Creating file at %s...\n", path);
+	__delay(STEP);
+	#endif
+
 	// set up 'nwd' helper
 	parse_path(path);
 	nwd.entry_type = FILE;
-
-	print_parsed_path();
-	pln();
-	__cio_printf("like, wtf ");
-	pln();
-	__cio_printf(path);
-	pln();
+	nwd.op_type = CREATE;
 
 	DirectoryEntry *entry = find_or_create_entry();
-	_fs_print_entry(entry, true);
+	if(entry == NULL){
+		__cio_printf("shit, we have a problem with %s\n\n", path);
+		__delay(100);
+	}
+	// _fs_print_entry(entry, true);
+
+	#ifdef DEBUG
+	__cio_printf("Creating file at %s!!!\n", path);
+	__delay(STEP);
+	#endif
+
 	return entry;
 }
 
 DirectoryEntry *_fs_create_dir(const char *path){
+	#ifdef DEBUG
+	__cio_printf("Creating dir at %s...\n", path);
+	__delay(STEP);
+	#endif
 	// set up 'nwd' helper
 	parse_path(path);
 	nwd.entry_type = DIRECTORY;
+	nwd.op_type = CREATE;
 
 	DirectoryEntry *entry = find_or_create_entry();
-	_fs_print_entry(entry, true);
-	return entry;
+	// _fs_print_entry(entry, true);
 	// return find_or_create_entry(entry->path);
+	
+	#ifdef DEBUG
+	__cio_printf("Creating dir at %s!!!\n", path);
+	__delay(STEP);
+	#endif
+
+	return entry;
 }
 
 void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryType type, uint32_t cluster, DirectoryEntry *next, uint8_t depth, const char *path) {
@@ -1672,7 +1740,7 @@ int _fs_print_children(DirectoryEntry *entry){
 			__cio_printf(" (%d bytes)");
 		}
 		__cio_putchar('\n');
-		 _fs_print_children(child);
+		_fs_print_children(child);
 	}
 	// #ifdef DEBUG
 	// __cio_printf("Printing %d children!!!\n", entry->subdirectory->num_files);
@@ -1703,14 +1771,14 @@ int _fs_print_entry(DirectoryEntry *entry, bool_t print_children){
 		}
 	}
 	else{
-		clear_fs_buffer();
-		__strcat(fs.buffer, "Directory: ");
-		__strcat(fs.buffer, entry->filename);
-		pvl(fs.buffer, '-', 2); // do this or the line below
-		// __cio_printf("%s\n", header);
-		if(print_children){
-			_fs_print_children(entry);
-		}
+		// clear_fs_buffer();
+		// __strcat(fs.buffer, "Directory: ");
+		// __strcat(fs.buffer, entry->filename);
+		// pvl(fs.buffer, '-', 2); // do this or the line below
+		// // __cio_printf("%s\n", header);
+		// if(print_children){
+		// 	_fs_print_children(entry);
+		// }
 	}
 
 	// #ifdef DEBUG

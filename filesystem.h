@@ -15,9 +15,14 @@ typedef enum EntryType {
 } EntryType;
 
 typedef enum PathType {
-    ABSOLUTE_PATH = 0x01, 	// Absolute path
-    RELATIVE_PATH = 0x02 	// Relative path
+    ABSOLUTE = 0x01, 	// Absolute path
+    RELATIVE = 0x02 	// Relative path
 } PathType;
+
+typedef enum OpType {
+    FIND = 0x01, 	// Absolute path
+    CREATE = 0x02 	// Relative path
+} OpType;
 
 // Define DirectoryEntry structure
 typedef struct DirectoryEntry {
@@ -46,6 +51,7 @@ typedef struct DeconstructedPath {
 	PathType path_type;
 	uint32_t curr; // current location in the paths array
 	EntryType entry_type;
+	OpType op_type;
 } DeconstructedPath; // TODO SEAN: to fix, check for 'first /' not '/ first
 
 typedef struct FATEntry {
@@ -236,6 +242,13 @@ int _fs_read_file(const char *filename/*, void *buffer, size_t size, off_t offse
  ** @return Number of bytes written on success, -1 on failure.
  */
 int _fs_write_file(const char *path, const void *data/*, size_t size, off_t offset*/);
+
+/*
+ ** Find an entry in the filesystem.
+ ** @param path Path of the entry to find.
+ ** @return new entry, NULL on failure
+ */
+DirectoryEntry *_fs_find_entry(const char *path);
 
 /*
  ** Create a new file in the filesystem.
