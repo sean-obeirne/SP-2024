@@ -286,7 +286,7 @@ int _fs_close_file(const char *filename);
  ** @param print_children true for recursion
  ** @return 0 on success, -1 on failure.
  */
-int _fs_print_entry(DirectoryEntry *entry, bool_t print_children);
+int _fs_print_entry(DirectoryEntry *entry);
 
 /*
  ** Set the permissions of a file in the filesystem.
