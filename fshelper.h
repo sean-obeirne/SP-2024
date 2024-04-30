@@ -70,6 +70,7 @@ void box_h(int max_item_size);
 void box_v(char *to_print);
 void box_pad_right(int longest_line);
 void print_chars(void);
+void d(void);
 
 void init_fs_buffer(void);
 void clear_fs_buffer(void);
@@ -84,6 +85,7 @@ void run_command(char **args, int word_count);
 void merge_path(char *path);
 
 char *strip_path(const char *path);
+void clean_nwd( void );
 void parse_path(const char *path);
 void test_parse_path(const char *path);
 void print_parsed_path( void );
