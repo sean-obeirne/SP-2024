@@ -19,6 +19,40 @@
 */
 
 USERMAIN( mainfs ) {
+
+	ph("FILESYSTEM");
+
+	const char *path = "";
+	const char *filename = "";
+	// DirectoryEntry *root = _fs_find_entry("/");
+	DirectoryEntry *de = NULL;
+	show_header_info(true);
+	filename = "/test/file";
+	DirectoryEntry *entry = _fs_create_file(filename);
+	filename = "/test/file2";
+	DirectoryEntry *entry2 = _fs_create_file(filename);
+	filename = "/you/will/be/impressed";
+	DirectoryEntry *entry3 = _fs_create_file(filename);
+	filename = "/told/you/so";
+	DirectoryEntry *entry4 = _fs_create_dir(filename);
+	filename = "/told/you/LOL";
+	DirectoryEntry *entry5 = _fs_create_file(filename);
+	filename = "/told/myself/nothing";
+	DirectoryEntry *entry6 = _fs_create_dir(filename);
+	plnn();
+	dr();
+	plnn();
+	filename = "/told/you/LOL";
+	DirectoryEntry *found = _fs_find_entry(filename);
+	_fs_print_entry(found);
+	pln();
+	
+	plw('@');
+	
+	get_path();
+
+#if 1  // main1
+	cwrites("poopybutt\n");
 	int count = 30; // default iteration count
 	char ch = '1';	// default character to print
 	char buf[128];	// local char buffer
@@ -73,5 +107,6 @@ USERMAIN( mainfs ) {
 	// this should really get us out of here
 	return( 42 );
 }
+#endif // main1
 
 #endif

@@ -77,7 +77,6 @@ void parse_input(int in_len){
 	for (int i = 0; i < MAX_ARGS; i++) {
 		args[i] = fs.disk.request_space(MAX_FILENAME_LENGTH);
 	}
-	// char **words = fs.disk.request_space(MAX_FILENAME_LENGTH);
 	int args_i = 0;
 
 	for (int i = 0; i < in_len; i++) {
@@ -103,7 +102,14 @@ void run_command(char **args, int arg_count){
 		pwd();
 	}
 	else if(__strcmp("cd", args[0]) == 0){
-		int success = change_dir(args[1]);
+		// __cio_printf("args[1]: %s\n", args[1]);
+
+		// TODO why in god's name do I need to do this??
+		char buffer[MAX_FILENAME_LENGTH];
+		__sprint(buffer, "%s", args[1]);
+		// __cio_printf("args[1]: %s\n", buffer);
+
+		int success = change_dir(buffer);
 		if(success != 0){
 			__cio_printf("  ERROR: Directory %s does not exist\n", args[1]);
 		}
@@ -849,7 +855,7 @@ int dir_contains(DirectoryEntry *parent, const char *target){
 }
 
 void pwd(){
-	__cio_printf("%s\n", fs.cwd);
+	__cio_printf("  %s\n", fs.cwd);
 }
 
 const char *get_current_dir(){
@@ -865,7 +871,7 @@ int cd_parent() {
     }
 
     uint32_t len = __strlen(fs.cwd);
-	__cio_printf("This len = %d\n", len);
+	// __cio_printf("This len = %d\n", len);
 
     // Find the last occurrence of '/' character
     int i;
@@ -880,11 +886,6 @@ int cd_parent() {
 		fs.cwd[j] = '\0';
 	}
 
-	plnn();
-	__cio_printf("idk, path1 %s\n", cwd.path);
-	// adjust_cwd(&cwd, fs.cwd);
-	__cio_printf("idk, path2 %s\n", cwd.path);
-	
 	return result;
 }
 
@@ -896,6 +897,7 @@ int change_dir(const char *path){
 
 	DirectoryEntry *new_entry = _fs_find_entry(path);
 	if(new_entry == NULL){
+		__cio_printf("ERROR: Unable to find directory at path %s\n", path);
 		return -1;
 	}
 
@@ -1319,7 +1321,7 @@ int _fs_delete_entry(const char *filename){
 
 	DirectoryEntry *entry = _fs_find_entry(filename);
 	if(entry == NULL){
-		__cio_printf("ERROR: File %s does not exist", filename);
+		__cio_printf("ERROR: File %s does not exist\n", filename);
 		return -1;
 	}
 
