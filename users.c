@@ -36,7 +36,7 @@
 USERMAIN(idle);  USERMAIN(shell);
 
 USERMAIN(main1); USERMAIN(main2); USERMAIN(main3); USERMAIN(main4);
-USERMAIN(main5); USERMAIN(main6);
+USERMAIN(main5); USERMAIN(main6); USERMAIN(mainfs);
 
 USERMAIN(userA); USERMAIN(userB); USERMAIN(userC); USERMAIN(userD);
 USERMAIN(userE); USERMAIN(userF); USERMAIN(userG); USERMAIN(userH);
@@ -115,6 +115,10 @@ USERMAIN(userY); USERMAIN(userZ);
 #if defined(SPAWN_T) || defined(SPAWN_U) || defined(SPAWN_V)
 #include "userland/main6.c"
 #include "userland/userW.c"
+#endif
+
+#if defined(SPAWN_FS)
+#include "userland/mainfs.c"
 #endif
 
 /*
