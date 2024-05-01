@@ -13,3 +13,4 @@ kernel.c
 kdefs.h
 users.h
 bootstrap.s
+copycode.sh
