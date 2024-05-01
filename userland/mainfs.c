@@ -52,7 +52,6 @@ USERMAIN( mainfs ) {
 	get_path();
 
 #if 1  // main1
-	cwrites("poopybutt\n");
 	int count = 30; // default iteration count
 	char ch = '1';	// default character to print
 	char buf[128];	// local char buffer
