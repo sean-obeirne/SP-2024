@@ -27,7 +27,7 @@ typedef struct {
 ** @param storage Pointer to the structure to be initialized.
 ** @return 0 on success, -1 on failure.
 */
-int storage_init(StorageInterface *storage);
+int _storage_init(StorageInterface *storage);
 
 /*
 ** Function to initialize the RAM disk

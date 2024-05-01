@@ -27,7 +27,7 @@ static uint32_t next_unique_id = 0; // incrementable value
 
 
 // Function to initialize the storage backend
-int storage_init(StorageInterface *storage) {
+int _storage_init(StorageInterface *storage) {
 	#ifdef DEBUG
 	__cio_printf("Initializing storage...\n");
 	__delay(STEP);

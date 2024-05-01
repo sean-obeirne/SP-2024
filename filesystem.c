@@ -1062,7 +1062,7 @@ int _fs_init( void ) {
 
 	// Initialize StorageInterface disk
     StorageInterface disk;
-    int result = storage_init(&disk);
+    int result = _storage_init(&disk);
     if (result < 0) {
         __cio_printf("ERROR: Failed to initialize storage\n");
         return -1;
