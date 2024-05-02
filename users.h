@@ -123,6 +123,7 @@
 #define	SPAWN_SHELL
 #endif
 
+/*
 // uncomment these to spawn the various user processes directly
 #define SPAWN_A
 #define SPAWN_B
@@ -145,6 +146,9 @@
 #define SPAWN_T
 #define SPAWN_U
 #define SPAWN_V
+*/
+#define SPAWN_SOUND
+
 
 //
 // There is no userO.  Users W-Z are spawned from other

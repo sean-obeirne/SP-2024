@@ -14,6 +14,7 @@
 #include "queues.h"
 #include "procs.h"
 #include "users.h"
+#include "EnumPCI.h"
 
 #include "bootstrap.h"
 #include "cio.h"
@@ -23,6 +24,7 @@
 #include "sio.h"
 #include "support.h"
 #include "syscalls.h"
+#include "audio.h"
 
 // need address of the init() function
 USERMAIN( init );
@@ -358,6 +360,11 @@ void _kinit( void ) {
 #endif
 	_sio_init();
 	_sys_init();
+	__cio_puts("init start");
+	initPci();
+	initAudio();
+	__cio_puts("init Complete");
+
 #if TRACING_SYSCALLS || TRACING_SYSRETS
 	__delay(50);
 #endif
