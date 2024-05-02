@@ -98,17 +98,14 @@ void parse_input(int in_len){
 
 void run_command(char **args, int arg_count){
 	// __cio_printf("WE ARE RUNNING THIS COMMAND I GUESS: %s\n", args[0]);
+	char buffer[MAX_FILENAME_LENGTH];
+	if(arg_count == 2){
+		__sprint(buffer, "%s", args[1]);
+	}
 	if(__strcmp("pwd", args[0]) == 0){
 		pwd();
 	}
 	else if(__strcmp("cd", args[0]) == 0){
-		// __cio_printf("args[1]: %s\n", args[1]);
-
-		// TODO why in god's name do I need to do this??
-		char buffer[MAX_FILENAME_LENGTH];
-		__sprint(buffer, "%s", args[1]);
-		// __cio_printf("args[1]: %s\n", buffer);
-
 		int success = change_dir(buffer);
 		if(success != 0){
 			__cio_printf("  ERROR: Directory %s does not exist\n", args[1]);
@@ -122,13 +119,17 @@ void run_command(char **args, int arg_count){
 	}
 	else if(__strcmp("mkdir", args[0]) == 0){
 		__cio_printf("----making dir\n");
+		_fs_create_dir(buffer);
+	}
+	else if(__strcmp("mk", args[0]) == 0){
+		__cio_printf("----making file %s\n", args[1]);
+		_fs_create_file(args[1]);
 	}
 	else if(__strcmp("print", args[0]) == 0){
 		__cio_printf("----printing\n");
 		// __sprint(fs.buffer, "/%s%s", fs.cwd, args[1]);
 		// dump_fs_buffer();
 		// __delay(100);
-		__cio_printf("arg_count: %d", arg_count);
 		if(arg_count == 1){
 			_fs_print_entry(_fs_find_entry(fs.cwd));
 		}
@@ -644,6 +645,9 @@ void print_parsed_path() {
     for (int i = 0; i < nwd.num_dirs; i++) {
         __cio_printf("  PATH %d: %s\n", i + 1, nwd.paths[i]);
     }
+	__cio_printf("  Entry type: %s\n", nwd.entry_type);
+	__cio_printf("  Path type: %s\n", nwd.path_type);
+	__cio_printf("  Operation type: %s\n", nwd.op_type);
 	#ifdef DEBUG
 	__cio_printf("Printing parsed path!!!\n");
 	__delay(STEP);
@@ -1216,6 +1220,8 @@ DirectoryEntry *_fs_create_file(const char *path){
 	parse_path(path);
 	nwd.entry_type = FILE;
 	nwd.op_type = CREATE;
+	print_parsed_path();
+	__cio_printf("BECAUSE, PATH PARSED IS %s\n", path);
 
 	DirectoryEntry *entry = find_or_create_entry();
 	// _fs_print_entry(entry);
