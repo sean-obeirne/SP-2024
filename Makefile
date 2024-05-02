@@ -15,16 +15,16 @@
 #
 
 OS_C_SRC = clock.c kernel.c kmem.c procs.c queues.c sched.c sio.c stacks.c \
-	   syscalls.c filesystem.c ramdisk.c
+	   syscalls.c filesystem.c ramdisk.c enumPci.c audio.c
 OS_C_OBJ = clock.o kernel.o kmem.o procs.o queues.o sched.o sio.o stacks.o \
-	   syscalls.o filesystem.o ramdisk.o
+	   syscalls.o filesystem.o ramdisk.o audio.o enumPci.o
 
 OS_S_SRC =
 OS_S_OBJ =
 
 OS_HDRS  = clock.h common.h compat.h kdefs.h kernel.h kmem.h offsets.h \
 	   params.h procs.h queues.h sched.h sio.h stacks.h syscalls.h \
-	   filesystem.h ramdisk.h
+	   filesystem.h ramdisk.h EnumPCI.h audio.h beep.h
 
 OS_LIBS =
 
@@ -368,5 +368,5 @@ users.o: userland/userH.c userland/userZ.c userland/userI.c userland/userW.c
 users.o: userland/userJ.c userland/userY.c userland/main4.c userland/userX.c
 users.o: userland/main5.c userland/userP.c userland/userQ.c userland/userR.c
 users.o: userland/userS.c userland/main6.c userland/init.c userland/idle.c
-users.o: userland/mainfs.c
+users.o: userland/mainfs.c userland/sound.c
 ulibs.o: syscalls.h common.h params.h kdefs.h cio.h support.h lib.h queues.h

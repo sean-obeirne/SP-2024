@@ -179,9 +179,11 @@ static proc_t spawn_table_2[] = {
 #ifdef SPAWN_V
 	PROCENT( main6, UserPrio, "V", "userV", "V", "6", "k" ),
 #endif
-
 #ifdef SPAWN_FS
 	PROCENT( mainfs, UserPrio, "Z", "userZ", "Z", "6", "k" ),
+#endif
+#ifdef SPAWN_SOUND
+	PROCENT( sound, UserPrio, "X", "userX", "X", "6", "k" ),
 #endif
 	
 	// a dummy entry to use as a sentinel
