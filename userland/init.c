@@ -347,7 +347,6 @@ static int32_t run( char which )
 
 	if( which == 'F'){
 		sprint( buf, "+++ Shell: yeah do somethin '%c'\n", which );
-		mainfs(1, NULL);
 	} else {
 		sprint( buf, "+++ Shell: unknown cmd '%c'\n", which );
 	}
