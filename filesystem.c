@@ -51,17 +51,17 @@ DeconstructedPath nwd = { // "New" working directory
 
 
 void _fs_shell( int code ) {
-	__cio_printf("YOU PRESSED A KEY %c\n", code);
-	__delay(STEP);
+	__cio_printf("Shell received code %d, char %c\n", code, (char)code);
 	switch( code ) {
 
 	case 'a':
+		__cio_printf("YOU PRESSED A\n", code);
 		break;
 
 	case 'c':
 		break;
 
-	case 'p':
+	case 'b':
 		break;
 
 	case 'q':
@@ -83,16 +83,18 @@ void _fs_shell( int code ) {
 
 	case 'h':  // help message
 		__cio_puts( "\nCommands:\n"
-					 "	 a	-- dump the active table\n"
-					 "	 c	-- dump contexts for active processes\n"
-					 "	 h	-- this message\n"
-					 "	 p	-- dump the active table and all PCBs\n"
-					 "	 q	-- dump the queues\n"
-					 "	 r	-- print system configuration\n"
-					 "	 s	-- dump stacks for active processes\n"
+					 "	 f	-- make new file\n"
+					 "	 d	-- make new directory\n"
+					 "	 l	-- list cwd contents\n"
+					 "	 c	-- change directory\n"
+					 "	 p	-- print entry\n"
+					 "	 d	-- dump root\n"
+					//  "	 f	-- \n"
+					 "	 h	-- print this message\n"
 					);
 		break;
 	}
+	__cio_getchar();
 }
 
 #endif // END New input code

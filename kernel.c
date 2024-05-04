@@ -307,7 +307,6 @@ void _kinit( void ) {
 	__cio_init( _kshell );
 #elif defined(SPAWN_FS)
 	__cio_init( _fs_shell );	   // no console callback routine
-	__cio_printf("WHERE R WE\n)");
 #endif
 
 #ifdef TRACE_CX
@@ -382,8 +381,6 @@ void _kinit( void ) {
 
 	// report our configuration options
 	_kreport( true );
-
-	__delay( 100 );	 // about 2.5 seconds
 
 	/*
 	** Other tasks typically performed here:
