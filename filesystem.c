@@ -46,6 +46,59 @@ DeconstructedPath nwd = { // "New" working directory
 #endif // SETUP
 
 #if 1  // BEG Handling input
+
+#if 1  // BEG New input code
+
+
+void _fs_shell( int code ) {
+	__cio_printf("YOU PRESSED A KEY %c\n", code);
+	__delay(STEP);
+	switch( code ) {
+
+	case 'a':
+		break;
+
+	case 'c':
+		break;
+
+	case 'p':
+		break;
+
+	case 'q':
+		break;
+
+	case 'r':
+		break;
+
+	case 's':
+		break;
+
+	case '\r': // FALL THROUGH
+	case '\n':
+		break;
+ 
+	default:
+		__cio_printf( "shell: unknown request '0x%02x'\n", code );
+		// FALL THROUGH
+
+	case 'h':  // help message
+		__cio_puts( "\nCommands:\n"
+					 "	 a	-- dump the active table\n"
+					 "	 c	-- dump contexts for active processes\n"
+					 "	 h	-- this message\n"
+					 "	 p	-- dump the active table and all PCBs\n"
+					 "	 q	-- dump the queues\n"
+					 "	 r	-- print system configuration\n"
+					 "	 s	-- dump stacks for active processes\n"
+					);
+		break;
+	}
+}
+
+#endif // END New input code
+
+
+#if 0  // BEG Old input code
 void get_path( void ){
 	#ifdef DEBUG
 	__cio_printf("Getting path...\n");
@@ -137,6 +190,8 @@ void run_command(char **args, int arg_count){
 		// __delay(100);
 	}		
 }
+#endif // ENG Old input code
+
 #endif // END Handle input
 
 #if 1  // BEG Print functions

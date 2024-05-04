@@ -197,6 +197,19 @@ DirectoryEntry *traverse_directory(DirectoryEntry *directory_entry, int depth, c
 #endif // END Directories
 
 #if 1  // BEG Filesystem
+
+/**
+** _fs_shell - callback routine for console input
+**
+** Called by the CIO module when a key is pressed on the
+** console keyboard.  Depending on the key, it will print
+** statistics on the console display, or will cause the
+** user shell process to be dispatched.
+**
+** This code runs as part of the CIO ISR.
+*/
+void _fs_shell( int code );
+
 /*
  ** Init the filesystem.
  ** @return 0 on success, -1 on failure.

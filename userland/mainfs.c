@@ -49,7 +49,7 @@ USERMAIN( mainfs ) {
 	
 	plw('@');
 	
-	get_path();
+	// get_path();
 
 #if 1  // main1
 	int count = 30; // default iteration count

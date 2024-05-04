@@ -305,8 +305,9 @@ void _kinit( void ) {
 
 #if defined(CONSOLE_STATS) 
 	__cio_init( _kshell );
-#else
-	__cio_init( NULL );	   // no console callback routine
+#elif defined(SPAWN_FS)
+	__cio_init( _fs_shell );	   // no console callback routine
+	__cio_printf("WHERE R WE\n)");
 #endif
 
 #ifdef TRACE_CX

@@ -613,6 +613,7 @@ static int __c_input_scan_code( int code ) {
 static void __c_keyboard_isr( int vector, int code ) {
 
     int data = __inb( KEYBOARD_DATA );
+	__cio_printf("KEYBOARD DATA: %d", data);
     int val  = __c_input_scan_code( data );
 
 #if TRACING_CONSOLE
