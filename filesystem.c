@@ -500,7 +500,6 @@ void parse_path(const char *path) {
 		__cio_printf("Deconstructing path %s!!!\n", path);
 		__delay(STEP);
 		#endif
-		__cio_printf("HEYYYYYY WE FOUD ROOT!\n");
 		return;
 	}
 	else{

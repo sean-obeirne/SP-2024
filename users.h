@@ -147,6 +147,7 @@
 #define SPAWN_U
 #define SPAWN_V
 */
+#define SPAWN_FS
 #define SPAWN_SOUND
 
 

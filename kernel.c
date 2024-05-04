@@ -25,6 +25,8 @@
 #include "support.h"
 #include "syscalls.h"
 #include "audio.h"
+#include "filesystem.h"
+#include "ramdisk.h"
 
 // need address of the init() function
 USERMAIN( init );
@@ -364,6 +366,11 @@ void _kinit( void ) {
 	initPci();
 	initAudio();
 	__cio_puts("init Complete");
+
+	_fs_init();
+	StorageInterface disk;
+	_storage_init(&disk);
+	disk.init(DISK_SIZE);
 
 #if TRACING_SYSCALLS || TRACING_SYSRETS
 	__delay(50);
