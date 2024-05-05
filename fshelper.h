@@ -65,6 +65,7 @@ void plw(char line_char);
 void plh(const char *header, char line_char);
 void phl(const char *header);
 void pvl(const char *header, char line_char, int indent);
+void nl(void);
 
 void box_h(int max_item_size);
 void box_v(char *to_print);
@@ -78,6 +79,7 @@ int dump_fs_buffer(void);
 void pb(void);
 void dr(void);
 void dump_fat(void);
+bool_t is_root(const char *path);
 
 void get_path( void );
 void parse_input(int in_len); // from buffer

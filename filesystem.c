@@ -51,50 +51,78 @@ DeconstructedPath nwd = { // "New" working directory
 
 
 void _fs_shell( int code ) {
-	__cio_printf("Shell received code %d, char %c\n", code, (char)code);
+	// __cio_printf("Shell received code %d, char %c\n", code, (char)code);
+	const char *shell_buffer = fs.disk.request_space(MAX_PATH_LENGTH); // TODO need to change
+	__memclr(shell_buffer, MAX_PATH_LENGTH);
 	switch( code ) {
 
-	case 'a':
-		__cio_printf("YOU PRESSED A\n", code);
-		break;
+		case 'f':
+			__cio_printf("Make File Path: ");
+			clear_fs_buffer();
+			__cio_gets(fs.buffer, MAX_FILENAME_LENGTH + 1);
+			__cio_printf("Making file at %s", fs.buffer);
+			break;
 
-	case 'c':
-		break;
+		case 'd':
+			__cio_printf("Make Directory Path: ");
+			clear_fs_buffer();
+			__cio_gets(fs.buffer, MAX_FILENAME_LENGTH + 1);
+			__cio_printf("Making directory at %s", fs.buffer);
+			break;
 
-	case 'b':
-		break;
+		case 'l':
+			nl();
+			list_dir_contents(fs.cwd, false);
+			break;
 
-	case 'q':
-		break;
+		case '/': // fall through
+		case 'c':
+			__cio_printf("New (Absolute) Path: ");
+			clear_fs_buffer();
+			__cio_gets(fs.buffer, MAX_FILENAME_LENGTH + 1);
+			change_dir(fs.buffer);
+			// __cio_printf("CD'ing into %s\n", fs.buffer);
+			break;
 
-	case 'r':
-		break;
+		case 'p':
+			__cio_printf("Printing nwd:\n");
+			print_parsed_path();
+			break;
 
-	case 's':
-		break;
+		case 'r':
+			nl();
+			list_dir_contents("/", false);
+			break;
+		
+		case 'q':
+			return;
+			break;
+		
+		// case '':
+		// 	break
 
-	case '\r': // FALL THROUGH
-	case '\n':
-		break;
- 
-	default:
-		__cio_printf( "shell: unknown request '0x%02x'\n", code );
-		// FALL THROUGH
+		case '\r': // FALL THROUGH
+		case '\n':
+			break;
+	
+		default:
+			__cio_printf( "shell: unknown request '0x%02x'\n", code );
+			// FALL THROUGH
 
-	case 'h':  // help message
-		__cio_puts( "\nCommands:\n"
-					 "	 f	-- make new file\n"
-					 "	 d	-- make new directory\n"
-					 "	 l	-- list cwd contents\n"
-					 "	 c	-- change directory\n"
-					 "	 p	-- print entry\n"
-					 "	 d	-- dump root\n"
-					//  "	 f	-- \n"
-					 "	 h	-- print this message\n"
-					);
-		break;
+		case 'h':  // help message
+			__cio_puts( "\nCommands:\n"
+						"	 f  -- make new file\n"
+						"	 d  -- make new directory\n"
+						"	 l  -- list cwd contents\n"
+						"	 c  -- change directory\n"
+						"	 p  -- print entry\n"
+						"	 r  -- dump root\n"
+						//  "	 f	-- \n"
+						"	 h  -- print this message\n"
+						"	 q  -- quit\n"
+						);
+			break;
 	}
-	__cio_getchar();
 }
 
 #endif // END New input code
@@ -236,7 +264,6 @@ void pln() {
 	for(int i = 0; i < 80; i++){
 		__cio_putchar('-');
 	}
-	__delay(SHORT_PAUSE);
 }
 
 void plnn() {
@@ -306,6 +333,10 @@ void pvl( const char *header, char line_char, int indent ){
 	}
 	if(!maxxed)
 		__cio_putchar('\n');
+}
+
+void nl(){
+	__cio_putchar('\n');
 }
 
 void print_chars(){
@@ -438,9 +469,10 @@ void show_header_info(bool_t horrizontal){
 	int len;
 
 	len = __strlen(fs.cwd);
+	__cio_puts_at(50, 0, "                              ");
 	__cio_puts_at(80-len, 0, fs.cwd);
 
-	if(horrizontal){
+	if(horrizontal == true){
 		len = __strlen("9 = Directory  7 = File");
 		__cio_printf_at(80-len, 1, "%c = Directory  %c = File", 9, 7);
 	}
@@ -458,7 +490,7 @@ void init_fs_buffer( void ) {
 
 void clear_fs_buffer( void ) {
 	// Fill the fs.buffer with zeros
-	__memclr(fs.buffer, BLOCK_SIZE);
+	__memclr(fs.buffer, SZ_PAGE);
 }
 
 void merge_path(char *path) {
@@ -532,15 +564,16 @@ void parse_path(const char *path) {
 	__cio_printf("Deconstructing path %s...\n", path);
 	__delay(STEP);
 	#endif
+
+    char scratch_buffer[MAX_PATH_LENGTH];
 	
-	if (path == NULL || *path == '\0') {
+	if (path == NULL || path[0] == '\0') {
 		__cio_printf("ERROR: Path is NULL\n");
 		return;
 	}
 
 	if(path[0] != '/'){
 		__cio_printf("**WARNING**: Relative paths not fully supported!\n");
-		// __panic("SEAN IS LAZY\n");
 	}
 
 	// root case
@@ -560,21 +593,21 @@ void parse_path(const char *path) {
 		return;
 	}
 	else{
-		nwd.filename[0] = '\0';
-		nwd.num_dirs = 0;
-		int pt = (path[0] == '/' ? ABSOLUTE : RELATIVE);
-		clear_fs_buffer();
-		if(pt == RELATIVE){
-			__strcpy(fs.buffer, cwd.path);
-			__strcat(fs.buffer, path);
-		}
-		else{
-			__strcpy(fs.buffer, path);
-			nwd.num_dirs = 1; // count root
-		}
-		nwd.path_type = pt;
-		__strcpy(nwd.path, fs.buffer);
-	}
+        nwd.filename[0] = '\0';
+        nwd.num_dirs = 0;
+        int pt = (path[0] == '/' ? ABSOLUTE : RELATIVE);
+        // Don't clear scratch_buffer, assume it's initialized properly
+        if(pt == RELATIVE){
+            __strcpy(scratch_buffer, cwd.path); // Use scratch_buffer directly
+            __strcat(scratch_buffer, path);
+        }
+        else{
+            __strcpy(scratch_buffer, path);
+            nwd.num_dirs = 1; // count root
+        }
+        nwd.path_type = pt;
+        __strcpy(nwd.path, scratch_buffer); // Use scratch_buffer directly
+    }
 
 
     // Other local variables
@@ -701,9 +734,9 @@ void print_parsed_path() {
     for (int i = 0; i < nwd.num_dirs; i++) {
         __cio_printf("  PATH %d: %s\n", i + 1, nwd.paths[i]);
     }
-	__cio_printf("  Entry type: %s\n", nwd.entry_type);
-	__cio_printf("  Path type: %s\n", nwd.path_type);
-	__cio_printf("  Operation type: %s\n", nwd.op_type);
+	__cio_printf("  Entry type: %s\n", nwd.entry_type == 1 ? "file" : "directory");
+	__cio_printf("  Path type: %s\n", nwd.path_type == 1 ? "absolute" : "relative");
+	__cio_printf("  Operation type: %s\n", nwd.op_type == 1 ? "find" : "create");
 	#ifdef DEBUG
 	__cio_printf("Printing parsed path!!!\n");
 	__delay(STEP);
@@ -751,7 +784,7 @@ DirectoryEntry *create_sub_entry(DirectoryEntry *parent, const char *filename, E
 	
 	#ifdef DEBUG
 	__cio_printf("Creating %s, a sub entry of %s...\n", filename, parent->filename);
-	__delay(SHORT_PAUSE);
+	__delay(STEP);
 	#endif
 
 
@@ -954,6 +987,13 @@ int change_dir(const char *path){
 	__cio_printf("CD'ing to %s...\n", path);
 	__delay(STEP);
 	#endif
+	
+	if(__strcmp(path, "/") == 0){
+		__memclr(fs.cwd, MAX_PATH_LENGTH);
+		__strcpy(fs.cwd, "/");
+		show_header_info(true);
+		return 0;
+	}
 
 	DirectoryEntry *new_entry = _fs_find_entry(path);
 	if(new_entry == NULL){
@@ -961,10 +1001,9 @@ int change_dir(const char *path){
 		return -1;
 	}
 
-	parse_path(path);
-	DirectoryEntry *entry;
 	if(nwd.path_type == ABSOLUTE){
-		__strcpy(fs.cwd, nwd.path);
+		__memclr(fs.cwd, MAX_PATH_LENGTH);
+		__strcpy(fs.cwd, new_entry->path);
 	}
 	else if(nwd.path_type == RELATIVE){
 		// TODO: Make relative path navigations work
@@ -1011,12 +1050,9 @@ int list_dir_contents(const char *path, bool_t box) { //TODO make this more line
 	// 	_fs_print_entry()
 	// }
 	// fs.cwd = (path[0] == '/' ? sprint(fs.cwd, "%s/%s", fs.cwd, path : fs.cwd));
-	if (path[0] != '/'){
-		sprint(fs.cwd, "%s/%s", fs.cwd, path);
-	}
-	__cio_printf("%s\n", fs.cwd);
-		// __cio_printf("ERROR: Please use absolute path to list dir content.\n");
-		// return -1;
+	// if (path[0] != '/'){
+	// 	sprint(fs.cwd, "%s/%s", fs.cwd, path);
+	// }
 	DirectoryEntry *entry = _fs_find_entry(path);
 	if (entry == NULL){
 		__cio_printf("ERROR: Finding %s returned NULL value\n", path);
@@ -1059,7 +1095,6 @@ int list_dir_contents(const char *path, bool_t box) { //TODO make this more line
 		}
 		box_h(longest_line);
 	} else{
-		__cio_putchar('\n');
 		clear_fs_buffer();
 		__sprint(fs.buffer, "Directory: %s\n", entry->filename);
 		pb();
@@ -1207,7 +1242,6 @@ int _fs_init( void ) {
 	// cwd
 	fs.cwd[0] = '/';
 	fs.cwd_dp = disk.request_space(sizeof(DeconstructedPath)); 
-	parse_path("/");
 
 	// Mount status
 	fs.mounted = false;
