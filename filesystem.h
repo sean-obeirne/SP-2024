@@ -268,7 +268,7 @@ DirectoryEntry *_fs_create_dir(const char *path);
  ** @param filename Name of the file to delete.
  ** @return 0 on success, -1 on failure.
  */
-int _fs_delete_file(const char *filename);
+int _fs_delete_entry(const char *filename);
 
 /*
  ** Rename a file in the filesystem.

@@ -76,7 +76,7 @@ void _fs_shell( int code ) {
 			__cio_printf("Delete entry: ");
 			clear_fs_buffer();
 			__cio_gets(fs.buffer, MAX_FILENAME_LENGTH + 1);
-			__cio_printf("Making directory at %s\n", fs.buffer);
+			__cio_printf("Delete file at %s\n", fs.buffer);
 			_fs_delete_entry(fs.buffer);
 			break;
 

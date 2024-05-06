@@ -132,6 +132,16 @@ int ramdisk_read(const int uid, void *buffer, uint32_t size) {
     return 0; // Success
 }
 
+void dump_pool(){
+	int i = 0;
+	Chunk *chunk = pool.pool_start;
+	while(chunk->next != NULL){
+		// chunk = get_chunk(i);
+		__cio_printf("Chunk %d:\n  is_allocated: %s\n  size: %d\n", chunk->uid, chunk->is_allocated ? "true" : "false", chunk->size);
+		chunk = chunk->next;
+	}
+}
+
 Chunk *get_free_chunk(uint32_t size) {
 	#ifdef DEBUG
     __cio_printf("Finding free chunk...\n");

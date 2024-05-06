@@ -30,6 +30,11 @@ typedef struct {
 int _storage_init(StorageInterface *storage);
 
 /*
+** Function to dump the contents of the memory pool
+*/
+void dump_pool( void );
+
+/*
 ** Function to initialize the RAM disk
 ** @param size Size of the RAM disk in bytes
 ** @return 0 on success, -1 on failure

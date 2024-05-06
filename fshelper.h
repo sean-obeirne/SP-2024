@@ -18,7 +18,7 @@
 #define BLOCK_SIZE 4096 // TODO SEAN: make this pull from somewhere
 #define TOTAL_SIZE (DISK_SIZE * BLOCK_SIZE)
 #define SECTOR_SIZE 512 // 8 sectors = 1 block
-#define ROOT_DIRECTORY_ENTRIES 32
+#define ROOT_DIRECTORY_ENTRIES 8
 #define MAX_COMMANDS 8 // number of words in command as a max
 #define MAX_INPUT 200 // number of characters to allow as input
 // #define ROOT_DIRECTORY_ENTRIES 4

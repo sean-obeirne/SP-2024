@@ -48,6 +48,8 @@ USERMAIN( mainfs ) {
 	pln();
 	
 	plw('@');
+	dump_pool();
+	plw('@');
 	
 	exit ( 42 );
 	return ( 42 );
