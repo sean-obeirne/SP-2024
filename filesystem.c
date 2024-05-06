@@ -52,22 +52,32 @@ DeconstructedPath nwd = { // "New" working directory
 
 void _fs_shell( int code ) {
 	// __cio_printf("Shell received code %d, char %c\n", code, (char)code);
-	const char *shell_buffer = fs.disk.request_space(MAX_PATH_LENGTH); // TODO need to change
-	__memclr(shell_buffer, MAX_PATH_LENGTH);
+	// const char *shell_buffer = fs.disk.request_space(MAX_PATH_LENGTH); // TODO need to change
+	// __memclr(shell_buffer, MAX_PATH_LENGTH);
 	switch( code ) {
 
 		case 'f':
-			__cio_printf("Make File Path: ");
+			__cio_printf("Make file path: ");
 			clear_fs_buffer();
 			__cio_gets(fs.buffer, MAX_FILENAME_LENGTH + 1);
-			__cio_printf("Making file at %s", fs.buffer);
+			__cio_printf("Making file at %s\n", fs.buffer);
+			_fs_create_file(fs.buffer);
 			break;
 
 		case 'd':
-			__cio_printf("Make Directory Path: ");
+			__cio_printf("Make directory path: ");
 			clear_fs_buffer();
 			__cio_gets(fs.buffer, MAX_FILENAME_LENGTH + 1);
-			__cio_printf("Making directory at %s", fs.buffer);
+			__cio_printf("Making directory at %s\n", fs.buffer);
+			_fs_create_dir(fs.buffer);
+			break;
+
+		case 'x':
+			__cio_printf("Delete entry: ");
+			clear_fs_buffer();
+			__cio_gets(fs.buffer, MAX_FILENAME_LENGTH + 1);
+			__cio_printf("Making directory at %s\n", fs.buffer);
+			_fs_delete_entry(fs.buffer);
 			break;
 
 		case 'l':
@@ -77,25 +87,18 @@ void _fs_shell( int code ) {
 
 		case '/': // fall through
 		case 'c':
-			__cio_printf("New (Absolute) Path: ");
+			__cio_printf("New (absolute) path: ");
 			clear_fs_buffer();
 			__cio_gets(fs.buffer, MAX_FILENAME_LENGTH + 1);
 			change_dir(fs.buffer);
 			// __cio_printf("CD'ing into %s\n", fs.buffer);
 			break;
 
-		case 'p':
-			__cio_printf("Printing nwd:\n");
-			print_parsed_path();
-			break;
 
 		case 'r':
 			nl();
+			__cio_printf("Listing root:\n");
 			list_dir_contents("/", false);
-			break;
-		
-		case 'q':
-			return;
 			break;
 		
 		// case '':
@@ -104,6 +107,11 @@ void _fs_shell( int code ) {
 		case '\r': // FALL THROUGH
 		case '\n':
 			break;
+		
+		case 'a':
+			__cio_printf("Printing nwd:\n");
+			print_parsed_path();
+			break;
 	
 		default:
 			__cio_printf( "shell: unknown request '0x%02x'\n", code );
@@ -111,15 +119,16 @@ void _fs_shell( int code ) {
 
 		case 'h':  // help message
 			__cio_puts( "\nCommands:\n"
-						"	 f  -- make new file\n"
-						"	 d  -- make new directory\n"
-						"	 l  -- list cwd contents\n"
-						"	 c  -- change directory\n"
-						"	 p  -- print entry\n"
-						"	 r  -- dump root\n"
-						//  "	 f	-- \n"
-						"	 h  -- print this message\n"
-						"	 q  -- quit\n"
+						"  	 f  -- make new file\n"
+						"  	 d  -- make new directory\n"
+						"  	 x  -- delete entry\n"
+						"  	 l  -- list cwd contents\n"
+						"  	 c  -- change directory\n"
+						"  	 p  -- print entry\n"
+						"  	 r  -- dump root\n"
+						"  	 a  -- print last parsed path\n"
+						// "	 f  -- \n"
+						"  	 h  -- print this message\n"
 						);
 			break;
 	}
@@ -469,9 +478,10 @@ void show_header_info(bool_t horrizontal){
 	int len;
 
 	len = __strlen(fs.cwd);
-	__cio_puts_at(50, 0, "                              ");
+	__cio_puts_at(50, 0, "                             ");
 	__cio_puts_at(80-len, 0, fs.cwd);
 
+	// TODO fix these, they don't show up
 	if(horrizontal == true){
 		len = __strlen("9 = Directory  7 = File");
 		__cio_printf_at(80-len, 1, "%c = Directory  %c = File", 9, 7);
@@ -623,7 +633,7 @@ void parse_path(const char *path) {
 	int scratch_i = 0;
     int filename_i = 0;
     int dir_names_i = 0;
-    int dir_name_i = 0;
+    // int dir_name_i = 0;
 
 	while(path_i < __strlen(path)){
 		filename[filename_i] = path[path_i];
@@ -1249,6 +1259,12 @@ int _fs_init( void ) {
 	// Error Handling
 	fs.last_error = 0;
 
+	// TODO: make this help text persist
+	// clear_fs_buffer();
+	// sprint(fs.buffer, "%c = Directory  %c = File", 9, 7);
+	// int len = __strlen(fs.buffer);
+	// __cio_puts_at(80-len, 1, fs.buffer);
+
 	#ifdef DEBUG
 	__cio_printf("Filesystem has been initialized\n");
 	__delay(STEP);
@@ -1310,8 +1326,6 @@ DirectoryEntry *_fs_create_file(const char *path){
 	parse_path(path);
 	nwd.entry_type = FILE;
 	nwd.op_type = CREATE;
-	print_parsed_path();
-	__cio_printf("BECAUSE, PATH PARSED IS %s\n", path);
 
 	DirectoryEntry *entry = find_or_create_entry();
 	// _fs_print_entry(entry);
@@ -1377,7 +1391,8 @@ void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename,
 		__strcpy(entry->path, path);
 	}
     // Allocate memory for the subdirectory
-    entry->subdirectory = _km_page_alloc(1);
+    // entry->subdirectory = _km_page_alloc(1);
+    entry->subdirectory = fs.disk.request_space(sizeof(entry->subdirectory));
     if (entry->subdirectory == NULL) {
         // Handle allocation failure
 		__cio_printf("Failed to allocate for subdirectory for entry %s\n", entry->filename);
