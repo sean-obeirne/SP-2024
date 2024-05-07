@@ -29,7 +29,6 @@ DirectoryEntry root_directory_entry = {
 
 DeconstructedPath cwd = {
 	.path = "/",
-	.curr = 0,
 	.filename = "/",
 	.num_dirs = 0,
 	.path_type = ABSOLUTE,
@@ -39,7 +38,6 @@ DeconstructedPath nwd = { // "New" working directory
 	.filename = "/",
 	.path = "/",
 	.num_dirs = 0,
-	.curr = 0,
 	.path_type = ABSOLUTE,
 };
 
@@ -76,7 +74,7 @@ void _fs_shell( int code ) {
 			__cio_printf("Delete entry: ");
 			clear_fs_buffer();
 			__cio_gets(fs.buffer, MAX_FILENAME_LENGTH + 1);
-			__cio_printf("Delete file at %s\n", fs.buffer);
+			__cio_printf("Deleting entry at %s\n", fs.buffer);
 			_fs_delete_entry(fs.buffer);
 			break;
 
@@ -101,8 +99,12 @@ void _fs_shell( int code ) {
 			list_dir_contents("/", false);
 			break;
 		
+		case 't':
+			dump_fat();
+			break;
+
 		// case '':
-		// 	break
+		// 	break;
 
 		case '\r': // FALL THROUGH
 		case '\n':
@@ -127,6 +129,7 @@ void _fs_shell( int code ) {
 						"  	 p  -- print entry\n"
 						"  	 r  -- dump root\n"
 						"  	 a  -- print last parsed path\n"
+						"  	 t  -- dump FAT\n"
 						// "	 f  -- \n"
 						"  	 h  -- print this message\n"
 						);
@@ -417,16 +420,49 @@ void dr(){
 		__cio_printf("FAILURE, root is NULL!!!\n");
 	}
 }
+#if 1
+void dump_fat() {
+    __cio_printf("FAT Dump:\n");
 
+    // Iterate through each entry in the FAT
+    for (int i = 0; i < MAX_FAT_ENTRIES; i++) {
+        // Print the index and status of the FAT entry
+        __cio_printf("Entry %d: ", i);
+        switch(fs.fat->entries[i].status) {
+            case FAT_FREE:
+                __cio_printf("FREE");
+                break;
+            case FAT_IN_USE:
+                __cio_printf("IN USE");
+				__delay(CSTEP);
+                break;
+            default:
+                __cio_printf("UNKNOWN");
+        }
+
+        // Print the next cluster value
+        __cio_printf(", Next Cluster: ");
+        if (fs.fat->entries[i].next_cluster == FAT_EOC) {
+            __cio_printf("END OF CHAIN\n");
+        } else {
+            __cio_printf("%d\n", fs.fat->entries[i].next_cluster);
+        }
+		__delay(CSTEP);
+    }
+}
+#endif
+
+#if 0
 void dump_fat( void ) {
 	phl("Dumping FAT\n");
     // Iterate over each entry in the FAT table
     for (int i = 0; i < MAX_FAT_ENTRIES; i++) {
         // Print the details of each FAT entry
         __cio_printf("FAT Entry %d: Next Cluster = %d, Status = %d\n", i, fs.fat->entries[i].next_cluster, fs.fat->entries[i].status);
-		__delay(STEP);
+		__delay(MOMENT);
     }
 }
+#endif
 #endif // END Dumping functions
 
 #if 1   // BEG Read / write functions
@@ -438,6 +474,18 @@ int read_block(int block_number){ // TODO SEAN chunks
 	// Copy data from disk image to file system buffer
 
 	return 0;
+}
+
+int calculate_block_number(int cluster) {
+    // Check if the cluster number is valid
+    if (cluster < 2 || cluster >= MAX_FAT_ENTRIES) {
+        __cio_printf("ERROR: Invalid cluster number\n");
+        return -1;
+    }
+
+    // Calculate the block number corresponding to the cluster
+	int block_number = (cluster - 2) * fs.bytes_per_cluster + fs.reserved_cluster_count * fs.bytes_per_cluster;
+    return block_number;
 }
 
 int write_block(int block_number, const uint8_t *data_ptr ) { // TODO SEAN chunks
@@ -520,13 +568,11 @@ void merge_path(char *path) {
 			__cio_printf("Failed to move up a diretory\n");
 		}
 	}
-	__cio_printf("%s\n", fs.cwd_dp);
 }
 
 void clean_nwd(){
 	// SAVE
 	cwd.num_dirs = nwd.num_dirs;
-    cwd.curr = nwd.curr;
     cwd.path_type = nwd.path_type;
     cwd.entry_type = nwd.entry_type;
     cwd.op_type = nwd.op_type;
@@ -547,7 +593,6 @@ void clean_nwd(){
 
 	// Reset all fields of nwd
 	nwd.num_dirs = 0;
-    nwd.curr = 0;
     nwd.path_type = ABSOLUTE;
     nwd.entry_type = DIRECTORY;
     nwd.op_type = FIND;
@@ -594,7 +639,6 @@ void parse_path(const char *path) {
 		nwd.dirs[0] = "/";
 		nwd.paths[0] = "/";
 		nwd.path_type = ABSOLUTE;
-		nwd.curr = 0;
 		nwd.entry_type = DIRECTORY;
 		#ifdef DEBUG
 		__cio_printf("Deconstructing path %s!!!\n", path);
@@ -689,7 +733,6 @@ void parse_path(const char *path) {
 		__strcpy(nwd.dirs[dir_names_i], filename);
 		__strcpy(nwd.paths[dir_names_i], scratch_path);
 		nwd.num_dirs = dir_names_i + 1;
-		nwd.curr = 0;
 		__memclr(filename, filename_i);
 	}
 
@@ -784,7 +827,42 @@ int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert){
 	#endif
 	return 0;
 }
+#if 1
+DirectoryEntry *create_sub_entry(DirectoryEntry *parent, const char *filename, EntryType type) {
+    // Create the entry in the parent directory
+    // You already have this part implemented
 
+	DirectoryEntry *child = fs.disk.request_space(sizeof(DirectoryEntry));
+    // Allocate a new cluster in the FAT for the entry
+    uint16_t new_cluster = allocate_cluster();
+
+	_fs_initialize_directory_entry(child, filename, 0, type, new_cluster, NULL, parent->depth+1, nwd.paths[parent->depth+1]);
+
+	
+	int result = add_sub_entry(parent, child);
+	if(result != 0){
+		__cio_printf("ERROR: Failed to create %s as child of %s\n", child->filename, parent->filename);
+		#ifdef DEBUG
+		__cio_printf("Creating %s, a sub entry of %s---\n", filename, parent->filename);
+		__delay(STEP);
+		#endif
+		return NULL;
+	}
+
+
+
+    // Set the cluster number in the DirectoryEntry
+    child->cluster = new_cluster;
+
+    // Update the FAT
+    update_fat_entry(new_cluster, FAT_EOC);
+	__cio_printf("New cluster: %d", new_cluster);
+
+    return child;
+}
+#endif
+
+#if 0
 DirectoryEntry *create_sub_entry(DirectoryEntry *parent, const char *filename, EntryType type) {
     // Check if the filename is valid
     if (parent == NULL) {
@@ -823,6 +901,7 @@ DirectoryEntry *create_sub_entry(DirectoryEntry *parent, const char *filename, E
 	// TODO SEAN: need to add FAT entry
 
 }
+#endif
 
 DirectoryEntry *get_sub_entry(DirectoryEntry *parent, const char *filename){
 	#ifdef DEBUG
@@ -847,6 +926,37 @@ DirectoryEntry *get_sub_entry(DirectoryEntry *parent, const char *filename){
 	return ret;
 }
 
+#if 1
+// Function to add a new entry to the FAT
+int add_fat_entry(uint32_t next_cluster) {
+    for (int i = 0; i < MAX_FAT_ENTRIES; i++) {
+        if (fs.fat->entries[i].status == FAT_FREE) {
+            // Check if the next_cluster value is already in use
+            for (int j = 0; j < MAX_FAT_ENTRIES; j++) {
+                if (fs.fat->entries[j].next_cluster == next_cluster && fs.fat->entries[j].status != FAT_FREE) {
+                    // Provided next_cluster value is already in use
+                    __cio_printf("ERROR: Cluster %d is already in use\n", next_cluster);
+                    return -1;
+                }
+            }
+            
+            // Set the next_cluster field to the provided value
+            fs.fat->entries[i].next_cluster = next_cluster;
+            
+            // Update the status field to indicate that the entry is in use
+            fs.fat->entries[i].status = FAT_IN_USE;
+            
+            // Return the index of the added entry
+            return i;
+        }
+    }
+    
+    // No open entry found in FAT
+    __cio_printf("ERROR: No open entry found in FAT\n");
+    return -1;
+}
+#endif
+#if 0
 int add_fat_entry(uint32_t next_cluster) {
     for (int i = 0; i < MAX_FAT_ENTRIES; i++) {
         if (fs.fat->entries[i].status == FAT_FREE) {
@@ -864,7 +974,7 @@ int add_fat_entry(uint32_t next_cluster) {
 	__cio_printf("ERROR: No open entry found in FAT");
     return -1;
 }
-
+#endif
 int get_subdirectory_count(DirectoryEntry *parent){
 	return 0;
 }
@@ -942,6 +1052,46 @@ DirectoryEntry *find_or_create_entry() {
 	#endif
 	return entry;
 }
+
+int get_next_cluster(int current_cluster) {
+    // Check if the current cluster is valid
+    if (current_cluster < fs.reserved_cluster_count || current_cluster >= DISK_SIZE) {
+        __cio_printf("ERROR: Invalid current cluster number\n");
+        return -1;
+    }
+
+    // Get the next cluster number from the FAT table
+    int next_cluster = fs.fat->entries[current_cluster].next_cluster;
+
+    // Check if the next cluster number is valid
+    if (next_cluster >= fs.reserved_cluster_count && next_cluster < FAT_EOC) {
+        return next_cluster;
+    } else {
+        return -1; // End of file reached
+    }
+}
+
+// Function to allocate a new cluster in the FAT
+uint16_t allocate_cluster() {
+    // Iterate through the FAT to find a free cluster
+    for (uint16_t cluster = fs.reserved_cluster_count; cluster < MAX_FAT_ENTRIES; cluster++) {
+        // Check if the cluster is free (marked as FAT_FREE)
+        if (fs.fat->entries[cluster].status == FAT_FREE) {
+            // Mark the cluster as in use
+            fs.fat->entries[cluster].status = FAT_IN_USE;
+            return cluster;
+        }
+    }
+    // If no free cluster is found, return an error value
+    return FAT_EOC; // FAT_EOC indicates error here
+}
+
+// Function to update the FAT entry for a given cluster
+void update_fat_entry(uint16_t cluster, uint16_t value) {
+    // Update the next_cluster field of the FAT entry for the specified cluster
+    fs.fat->entries[cluster].next_cluster = value;
+}
+
 #endif // END Helper functions
 
 #if 1  // BEG Directory manipulation
@@ -1158,14 +1308,9 @@ int _fs_init( void ) {
 	// Initialize the filesystem structure and perform any necessary setup
 
 	// Initialize the file system struct with appropriate values
-	fs.bytes_per_sector = SECTOR_SIZE;
-	fs.sectors_per_cluster = 8;
-	fs.reserved_sector_count = 1;
-	fs.number_of_fats = 1;
-	fs.total_sectors = 2880;
-	fs.fat_size_sectors = 16; // fat size in sectors
-	fs.root_directory_cluster = 1; // root is at cluster _
-				       //Q? do clusters=blocks=pages? and do sectors=segments?
+	fs.bytes_per_cluster = SZ_PAGE;
+	fs.reserved_cluster_count = 4;
+	fs.total_clusters = MAX_FAT_ENTRIES;
 
 	// Initialize StorageInterface disk
     StorageInterface disk;
@@ -1190,7 +1335,7 @@ int _fs_init( void ) {
 
 
 	// Request free space on the RAM disk for the FAT
-    fs.fat = (FAT *)disk.request_space(fs.fat_size_sectors * fs.bytes_per_sector);
+    fs.fat = (FAT *)disk.request_space(fs.bytes_per_cluster * fs.total_clusters);
     if (fs.fat < 0) {
         __cio_printf("ERROR: failed to request free space for FAT\n");
         return -1;
@@ -1211,22 +1356,6 @@ int _fs_init( void ) {
 
 	fs.fat_entry_size = 4;
 
-	// Root Directory Information
-	// fs.root_directory_entries = 32;
-	fs.root_directory_entry = (DirectoryEntry *) disk.request_space(sizeof(DirectoryEntry) * ROOT_DIRECTORY_ENTRIES); // TODO SEAN: do not allocate pages, but bytes
-
-	// if( root_directory == NULL ){
-		//TODO SEAN: free fs.fat
-		// __cio_printf("ERROR: Failed to init the root directory\n");
-		// return -1;
-	// }
-
-	// add_fat_entry(0);
-
-	// dump_fat();
-
-	// Current Directory Information
-	fs.current_directory_cluster = fs.root_directory_cluster;
 
 	// File System Metadata
 	for (int i = 0; i < 12; i++) {
@@ -1251,13 +1380,9 @@ int _fs_init( void ) {
 
 	// cwd
 	fs.cwd[0] = '/';
-	fs.cwd_dp = disk.request_space(sizeof(DeconstructedPath)); 
 
 	// Mount status
 	fs.mounted = false;
-
-	// Error Handling
-	fs.last_error = 0;
 
 	// TODO: make this help text persist
 	// clear_fs_buffer();
@@ -1435,6 +1560,10 @@ int _fs_delete_entry(const char *filename){
 		__cio_printf("ERROR: File %s does not exist\n", filename);
 		return -1;
 	}
+	// __cio_printf("Here we are deleting an entry of filename %s, entry = %d", filename, (entry->subdirectory->num_files * sizeof(Directory)));
+	for(int i = 0; i < entry->subdirectory->num_files; i++){
+		__memclr(entry->subdirectory->files[i], sizeof(DirectoryEntry));
+	}
 
 	__memclr(entry, sizeof(DirectoryEntry));
 
@@ -1461,7 +1590,42 @@ int _fs_open_file(const char *filename, const char *mode){
 
 	return 0;
 }
+#if 1
+int _fs_read_file(const char *filename) {
+	#ifdef DEBUG
+	__cio_printf("Reading...\n");
+	__delay(STEP);
+	#endif
 
+	// Search for the file in the directory structure
+	DirectoryEntry *entry = _fs_find_entry(filename);
+	if (entry == NULL) {
+		__cio_printf("ERROR: Filename %s not found!\n", filename);
+		return -1;
+	}
+
+	// Start reading data blocks from the file's clusters
+	int current_cluster = entry->cluster;
+	while (current_cluster != FAT_EOC) {
+		// Calculate the block number corresponding to the current cluster
+		uint32_t block_number = calculate_block_number(current_cluster);
+
+		// Read the block from the disk image into the buffer
+		#ifdef DEBUG
+		__cio_printf("Reading block %d\n", block_number);
+		__delay(STEP);
+		#endif
+		read_block(block_number);
+
+		// Move to the next cluster in the FAT
+		current_cluster = get_next_cluster(current_cluster);
+	}
+
+	return 0;
+}
+
+#endif
+#if 0
 int _fs_read_file(const char *filename) {
 	#ifdef DEBUG
 	__cio_printf("Reading...\n");
@@ -1499,6 +1663,7 @@ int _fs_read_file(const char *filename) {
 	// dump_fs_buffer();
 	return 0;
 }
+#endif
 
 int _fs_write_file(const char *path, const void *data) {
 	#ifdef DEBUG

@@ -10,7 +10,7 @@
 // Define constants, macros, and data structures specific to FAT32 filesystem
 
 // Constants for FAT32 filesystem implementation
-#define MAX_FAT_ENTRIES 20
+#define MAX_FAT_ENTRIES 64
 #define FAT_EOC 0xFFFF
 #define FAT_FREE 0x0
 #define FAT_IN_USE 0x1
@@ -22,7 +22,7 @@
 #define MAX_COMMANDS 8 // number of words in command as a max
 #define MAX_INPUT 200 // number of characters to allow as input
 // #define ROOT_DIRECTORY_ENTRIES 4
-#define MAX_FILENAME_LENGTH 255
+#define MAX_FILENAME_LENGTH 31
 #define MAX_PATH_LENGTH 1023
 #define MAX_DEPTH 16
 #define FS_BUFFER_SIZE 4096
@@ -90,7 +90,11 @@ char *strip_path(const char *path);
 void clean_nwd( void );
 void parse_path(const char *path);
 void test_parse_path(const char *path);
-void print_parsed_path( void );
+void print_parsed_path(void);
+
+uint16_t allocate_cluster(void);
+int get_next_cluster(int current_cluster);
+void update_fat_entry(uint16_t cluster, uint16_t value);
 
 DirectoryEntry *create_sub_entry(DirectoryEntry *parent, const char *filename, EntryType type);
 int add_sub_entry(DirectoryEntry *dest, DirectoryEntry *insert);

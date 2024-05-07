@@ -43,13 +43,12 @@ typedef struct Directory {
 } Directory;
 
 typedef struct DeconstructedPath {
-    char filename[MAX_FILENAME_LENGTH];  // String to store file name
-	char path[MAX_PATH_LENGTH];
-    uint8_t num_dirs;  // Number of directory names
-    char *dirs[MAX_FILENAME_LENGTH];  // Array to store directory names
-    char *paths[MAX_FILENAME_LENGTH];  // Array to store path entries
+    char filename[MAX_FILENAME_LENGTH];	// String to store file name
+	char path[MAX_PATH_LENGTH];			// String to store full path string
+    uint8_t num_dirs;  					// Number of directory names
+    char *dirs[MAX_FILENAME_LENGTH];  	// Array to store directory names
+    char *paths[MAX_FILENAME_LENGTH];  	// Array to store path entries
 	PathType path_type;
-	uint32_t curr; // current location in the paths array
 	EntryType entry_type;
 	OpType op_type;
 } DeconstructedPath; // TODO SEAN: to fix, check for 'first /' not '/ first
@@ -61,48 +60,33 @@ typedef struct FATEntry {
 
 typedef struct FAT {
 	FATEntry entries[MAX_FAT_ENTRIES]; // Array of FAT entries
-									   // Additional fields or metadata related to the FAT table
 } FAT;
 
 typedef struct FileSystem {
 	// Boot Sector Information
-	uint16_t bytes_per_sector;
-	uint8_t sectors_per_cluster;
-	uint16_t reserved_sector_count;
-	uint8_t number_of_fats;
-	uint32_t total_sectors;
-	uint32_t fat_size_sectors;
-	uint32_t root_directory_cluster;
+	uint16_t bytes_per_cluster;
+	uint16_t reserved_cluster_count;
+	uint32_t total_clusters;
 
 	// FAT Information
 	FAT *fat;
 	uint16_t fat_entry_size;
 
-	// Root Directory Information
-	uint16_t root_directory_entries;
-	DirectoryEntry *root_directory_entry;
-
-	// Current Directory Information
-	uint32_t current_directory_cluster;
-
 	// File System Metadata
 	char volume_label[12];
 	char file_system_type[8];
 
-	// Disk Information
+	// Disk (RAMdisk)
 	StorageInterface disk;
 
-	// Cache or Buffer
+	// General purpose cache or buffer
 	char *buffer;
 
+	// Current working directory (as path string)
 	char cwd[MAX_PATH_LENGTH + 1];
-	DeconstructedPath *cwd_dp;
 
 	// Mounted status
 	bool_t mounted;
-
-	// Error Handling
-	int last_error;
 } FileSystem;
 #endif // END Definitions
 
