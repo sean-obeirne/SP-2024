@@ -5,7 +5,7 @@
 ** @author Sean O'Beirne
 */
 
-#if 1  // SETUP
+#if 1  // BEG SETUP
 #include "filesystem.h" // Implement filesystem.h
 #include "fshelper.h" // DEV: Include helper functions
 #include "common.h" // Include custom data types
@@ -48,13 +48,9 @@ DeconstructedPath nwd = { // "New" working directory
 	.path_type = ABSOLUTE,
 };
 
-#endif // SETUP
+#endif // END SETUP
 
 #if 1  // BEG Handling input
-
-#if 1  // BEG New input code
-
-
 void _fs_shell( int code ) {
 	// __cio_printf("Shell received code %d, char %c\n", code, (char)code);
 	// const char *shell_buffer = fs.disk.request_space(MAX_PATH_LENGTH); // TODO need to change
@@ -143,103 +139,6 @@ void _fs_shell( int code ) {
 			break;
 	}
 }
-
-#endif // END New input code
-
-
-#if 0  // BEG Old input code
-void get_path( void ){
-	#ifdef DEBUG
-	__cio_printf("Getting path...\n");
-	__delay(STEP);
-	#endif
-	
-	int in_len = 2;
-	while(in_len > 1){
-		int start = __strlen(fs.cwd) + 1;
-		__cio_printf("%s: ", fs.cwd);
-		clear_fs_buffer();
-		in_len = __cio_gets(fs.buffer, 80 - start);
-		parse_input(in_len);
-	}
-
-	// dump_fs_buffer();
-	// dr();
-
-	#ifdef DEBUG
-	__cio_printf("Getting path!!!\n");
-	__delay(STEP);
-	#endif
-}
-
-void parse_input(int in_len){
-	char command_buffer[MAX_FILENAME_LENGTH];
-	int buffer_i = 0;
-	char *args[MAX_FILENAME_LENGTH+1];
-	for (int i = 0; i < MAX_ARGS; i++) {
-		args[i] = fs.disk.request_space(MAX_FILENAME_LENGTH);
-	}
-	int args_i = 0;
-
-	for (int i = 0; i < in_len; i++) {
-        if (fs.buffer[i] == ' ' || fs.buffer[i] == '\n') {
-			command_buffer[buffer_i++] = '\0';
-			buffer_i = 0;
-			__strcpy(args[args_i++], command_buffer);
-			__memclr(command_buffer, MAX_INPUT);
-        }
-		else{
-			command_buffer[buffer_i++] = fs.buffer[i];
-		}
-    }
-	command_buffer[buffer_i] = '\0'; // Null-terminate the last word
-    __memcpy(args[args_i], command_buffer, MAX_INPUT); // Copy the last word to words array
-	run_command(args, args_i);
-
-}
-
-void run_command(char **args, int arg_count){
-	// __cio_printf("WE ARE RUNNING THIS COMMAND I GUESS: %s\n", args[0]);
-	char buffer[MAX_FILENAME_LENGTH];
-	if(arg_count == 2){
-		__sprint(buffer, "%s", args[1]);
-	}
-	if(__strcmp("pwd", args[0]) == 0){
-		pwd();
-	}
-	else if(__strcmp("cd", args[0]) == 0){
-		int success = change_dir(buffer);
-		if(success != 0){
-			__cio_printf("  ERROR: Directory %s does not exist\n", args[1]);
-		}
-	}
-	else if(__strcmp("cd..", args[0]) == 0){
-		cd_parent();
-	}
-	else if(__strcmp("ls", args[0]) == 0){
-		arg_count <= 1 ? list_dir_contents(fs.cwd, false) : list_dir_contents(args[1], false);
-	}
-	else if(__strcmp("mkdir", args[0]) == 0){
-		__cio_printf("----making dir\n");
-		_fs_create_dir(buffer);
-	}
-	else if(__strcmp("mk", args[0]) == 0){
-		__cio_printf("----making file %s\n", args[1]);
-		_fs_create_file(args[1]);
-	}
-	else if(__strcmp("print", args[0]) == 0){
-		__cio_printf("----printing\n");
-		// __sprint(fs.buffer, "/%s%s", fs.cwd, args[1]);
-		// dump_fs_buffer();
-		// __delay(100);
-		if(arg_count == 1){
-			_fs_print_entry(_fs_find_entry(fs.cwd));
-		}
-		_fs_print_entry(_fs_find_entry(args[1]));
-		// __delay(100);
-	}		
-}
-#endif // ENG Old input code
 
 #endif // END Handle input
 
@@ -408,9 +307,9 @@ void box_pad_right(int longest_line){
 
 #if 1  // BEG Dumping functions
 int dump_fs_buffer( void ){
-	pvl("Dumping Buffer:\n", '-', 0);
+	pvl("Dumping Buffer:\n", '-', 2);
 	__delay(STEP);
-	__cio_printf(" %s\n", (char *)fs.buffer);
+	__cio_printf("    %s\n", (char *)fs.buffer);
 	__delay(STEP);
 	return 0;
 }
@@ -556,25 +455,6 @@ void init_fs_buffer( void ) {
 void clear_fs_buffer( void ) {
 	// Fill the fs.buffer with zeros
 	__memclr(fs.buffer, SZ_PAGE);
-}
-
-void merge_path(char *path) {
-	#ifdef DEBUG
-	__cio_printf("Merging paths, cwd %s, and path %s...\n", fs.cwd, path);
-	__delay(STEP);
-	#endif
-
-	// pwd();
-	int result;
-	parse_path(path);
-	__cio_printf("Tryna get %s%s\n", fs.cwd, nwd.path);
-	int i = 0;
-	while(strcmp(nwd.dirs[i++], "..") == 0){
-		result = cd_parent();
-		if(result != 0){
-			__cio_printf("Failed to move up a diretory\n");
-		}
-	}
 }
 
 void clean_nwd(){
@@ -982,9 +862,6 @@ int add_fat_entry(uint32_t next_cluster) {
     return -1;
 }
 #endif
-int get_subdirectory_count(DirectoryEntry *parent){
-	return 0;
-}
 
 
 DirectoryEntry *find_or_create_entry_recursive(DirectoryEntry *current_dir, int depth) {
