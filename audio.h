@@ -1,5 +1,5 @@
-#ifndef AUDIO.H
-#define AUDIO.H
+#ifndef AUDIO_H
+#define AUDIO_H
 
 #include "EnumPCI.h"
 

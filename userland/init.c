@@ -8,7 +8,7 @@
 #define INIT_H_
 
 #include "users.h"
-
+#include "mainfs.c"
 #include "ulib.h"
 
 /**
