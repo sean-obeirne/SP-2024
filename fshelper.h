@@ -1,3 +1,11 @@
+/*
+** File: fshelper.h
+** Description: This file includes a bunch of helper functions to facilitate
+** the implementation of a filesystem. Also defines useful constants
+**
+** @author Sean O'Beirne
+*/
+
 #ifndef FS_HELPER_H_
 #define FS_HELPER_H_
 #if 1  // BEG variables
@@ -9,23 +17,6 @@
 
 // Define constants, macros, and data structures specific to FAT32 filesystem
 
-// Constants for FAT32 filesystem implementation
-#define MAX_FAT_ENTRIES 64
-#define FAT_EOC 0xFFFF
-#define FAT_FREE 0x0
-#define FAT_IN_USE 0x1
-#define DISK_SIZE 16 // disk is this many blocks
-#define BLOCK_SIZE 4096 // TODO SEAN: make this pull from somewhere
-#define TOTAL_SIZE (DISK_SIZE * BLOCK_SIZE)
-#define SECTOR_SIZE 512 // 8 sectors = 1 block
-#define ROOT_DIRECTORY_ENTRIES 8
-#define MAX_COMMANDS 8 // number of words in command as a max
-#define MAX_INPUT 200 // number of characters to allow as input
-// #define ROOT_DIRECTORY_ENTRIES 4
-#define MAX_FILENAME_LENGTH 31
-#define MAX_PATH_LENGTH 1023
-#define MAX_DEPTH 16
-#define FS_BUFFER_SIZE 4096
 
 // Print debugging info, such as current operation or success status
 ////////////////

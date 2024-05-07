@@ -1,3 +1,10 @@
+/*
+** File: filesystem.c
+** Description: This file includes the full implementation of a filesystem.
+**
+** @author Sean O'Beirne
+*/
+
 #if 1  // SETUP
 #include "filesystem.h" // Implement filesystem.h
 #include "fshelper.h" // DEV: Include helper functions

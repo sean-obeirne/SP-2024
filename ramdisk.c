@@ -1,3 +1,10 @@
+/*
+** File: ramdisk.c
+** Description: This file includes the full implementation of a RAMdisk driver
+**
+** @author Sean O'Beirne
+*/
+
 #include "ramdisk.h"
 #include "support.h"
 #include "kmem.h"
@@ -133,7 +140,6 @@ int ramdisk_read(const int uid, void *buffer, uint32_t size) {
 }
 
 void dump_pool(){
-	int i = 0;
 	Chunk *chunk = pool.pool_start;
 	while(chunk->next != NULL){
 		// chunk = get_chunk(i);

@@ -22,7 +22,6 @@ USERMAIN( mainfs ) {
 
 	ph("FILESYSTEM");
 
-	const char *path = "";
 	const char *filename = "";
 	// DirectoryEntry *root = _fs_find_entry("/");
 	DirectoryEntry *entry;
@@ -50,7 +49,7 @@ USERMAIN( mainfs ) {
 	plw('@');
 	dump_pool();
 	plw('@');
-	
+
 	exit ( 42 );
 	return ( 42 );
 }

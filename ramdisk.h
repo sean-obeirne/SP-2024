@@ -1,3 +1,10 @@
+/*
+** File: ramdisk.h
+** Description: This file outlines a RAMdisk driver for in-memory data storage
+**
+** @author Sean O'Beirne
+*/
+
 #ifndef RAMDISK_H
 #define RAMDISK_H
 
