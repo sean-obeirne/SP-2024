@@ -1,3 +1,10 @@
+/*
+** File: mainfs.c
+** Description: This file is the main() which can test our filesystem
+**
+** @author Sean O'Beirne
+*/
+
 #ifndef MAIN_FS_H_
 #define MAIN_FS_H_
 
