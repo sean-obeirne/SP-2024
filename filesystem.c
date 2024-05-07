@@ -337,10 +337,11 @@ void dump_fat() {
         switch(fs.fat->entries[i].status) {
             case FAT_FREE:
                 __cio_printf("FREE");
+				__delay(CSTEP);
                 break;
             case FAT_IN_USE:
                 __cio_printf("IN USE");
-				__delay(CSTEP);
+				__delay(MOMENT);
                 break;
             default:
                 __cio_printf("UNKNOWN");
@@ -358,17 +359,6 @@ void dump_fat() {
 }
 #endif
 
-#if 0
-void dump_fat( void ) {
-	phl("Dumping FAT\n");
-    // Iterate over each entry in the FAT table
-    for (int i = 0; i < MAX_FAT_ENTRIES; i++) {
-        // Print the details of each FAT entry
-        __cio_printf("FAT Entry %d: Next Cluster = %d, Status = %d\n", i, fs.fat->entries[i].next_cluster, fs.fat->entries[i].status);
-		__delay(MOMENT);
-    }
-}
-#endif
 #endif // END Dumping functions
 
 #if 1   // BEG Read / write functions
@@ -414,19 +404,9 @@ int write_block(int block_number, const uint8_t *data_ptr ) { // TODO SEAN chunk
 	return 0;
 }
 
-int read_sector( int sector_number, void *buffer ){
-	__memset(buffer, SECTOR_SIZE, 48);
-	return 0;
-}
-
 #endif  // END Read / write functions
 
 #if 1  // BEG Helper functions
-
-// void adjust_cwd( DeconstructedPath *cwd, const char *path ){
-// 	__cio_printf("ADJUSTING.............\n");
-// 	// print_parsed_path(*cwd);
-// }
 
 void show_header_info(bool_t horrizontal){
 	int len;
@@ -743,50 +723,9 @@ DirectoryEntry *create_sub_entry(DirectoryEntry *parent, const char *filename, E
 
     // Update the FAT
     update_fat_entry(new_cluster, FAT_EOC);
-	__cio_printf("New cluster: %d", new_cluster);
+	__cio_printf("New cluster: %d\n", new_cluster);
 
     return child;
-}
-#endif
-
-#if 0
-DirectoryEntry *create_sub_entry(DirectoryEntry *parent, const char *filename, EntryType type) {
-    // Check if the filename is valid
-    if (parent == NULL) {
-		__cio_printf("ERROR: Parent %s undefined\n", parent->filename);
-        return NULL;
-    }
-	
-	#ifdef DEBUG
-	__cio_printf("Creating %s, a sub entry of %s...\n", filename, parent->filename);
-	__delay(STEP);
-	#endif
-
-
-	DirectoryEntry *child = fs.disk.request_space(sizeof(DirectoryEntry));
-
-	_fs_initialize_directory_entry(child, filename, 0, type, 0, NULL, parent->depth+1, nwd.paths[parent->depth+1]);
-
-	
-	int result = add_sub_entry(parent, child);
-	if(result != 0){
-		__cio_printf("ERROR: Failed to create %s as child of %s\n", child->filename, parent->filename);
-		#ifdef DEBUG
-		__cio_printf("Creating %s, a sub entry of %s---\n", filename, parent->filename);
-		__delay(STEP);
-		#endif
-		return NULL;
-	}
-	
-	#ifdef DEBUG
-	__cio_printf("Creating %s, a sub entry of %s!!!\n", filename, parent->filename);
-	__delay(STEP);
-	#endif
-
-	return child;
-
-	// TODO SEAN: need to add FAT entry
-
 }
 #endif
 
@@ -840,25 +779,6 @@ int add_fat_entry(uint32_t next_cluster) {
     
     // No open entry found in FAT
     __cio_printf("ERROR: No open entry found in FAT\n");
-    return -1;
-}
-#endif
-#if 0
-int add_fat_entry(uint32_t next_cluster) {
-    for (int i = 0; i < MAX_FAT_ENTRIES; i++) {
-        if (fs.fat->entries[i].status == FAT_FREE) {
-            // Set the next_cluster field to the provided value
-            fs.fat->entries[i].next_cluster = next_cluster;
-            
-            // Update the status field to indicate that the entry is in use
-            fs.fat->entries[i].status = FAT_IN_USE;
-            
-            // Return the index of the added entry
-            return i;
-        }
-    }
-    
-	__cio_printf("ERROR: No open entry found in FAT");
     return -1;
 }
 #endif
@@ -989,14 +909,6 @@ int dir_contains(DirectoryEntry *parent, const char *target){
 		}
 	}
 	return -1;
-}
-
-void pwd(){
-	__cio_printf("  %s\n", fs.cwd);
-}
-
-const char *get_current_dir(){
-	return fs.cwd;
 }
 
 int cd_parent() {
@@ -1156,24 +1068,6 @@ int list_dir_contents(const char *path, bool_t box) { //TODO make this more line
 		// __cio_printf("%s\n", header);
 	}
 	
-#if 0
-	// Print directory contents
-	for (uint32_t i = 0; i < dir->num_files; i++) {
-		len = __strlen(dir->files[i]->filename);
-		if (len > longest_line){
-			longest_line = len;
-		}
-		// __cio_printf("|    %c %s |\n", entry->type == 1 ? FILLED_CIRCLE : OPEN_CIRCLE, dir->files[i]->filename); //TODO SEAN expand the info here
-		__sprint(fs.buffer, "|    %c %s |\n", entry->type == 1 ? FILLED_CIRCLE : OPEN_CIRCLE, dir->files[i]->filename); //TODO SEAN expand the info here
-		box_pad_right(longest_line);
-	}
-#endif
-
-	#ifdef DEBUG
-	__cio_printf("Listing %s!!!\n", path);
-	__delay(STEP);
-	#endif
-	return 0;
 }
 #endif // END Directory manipulation
 

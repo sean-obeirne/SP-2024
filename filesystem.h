@@ -6,37 +6,36 @@
 ** @author Sean O'Beirne
 */
 
-#ifndef FAT32_H_
-#define FAT32_H_
+#ifndef FILESYSTEM_H_
+#define FILESYSTEM_H_
 #if 1  // BEG Definitions
 
 #include "common.h"
 #include "ramdisk.h"
 #include "fshelper.h"
 
-// Define constants, macros, and data structures specific to FAT32 filesystem
-// Constants for FAT32 filesystem implementation
-#define MAX_FAT_ENTRIES 64
-#define FAT_EOC 0xFFFF
-#define FAT_FREE 0x0
-#define FAT_IN_USE 0x1
+// FAT constants
+#define MAX_FAT_ENTRIES 64 // total entries in FAT
+#define FAT_EOC 0xFFFF // FAT end of cluster value
+#define FAT_FREE 0x0 // FAT cluster is free
+#define FAT_IN_USE 0x1 // FAT cluster is not free
+
+// Disk constants
 #define DISK_SIZE 16 // disk is this many blocks
-#define BLOCK_SIZE 4096 // TODO SEAN: make this pull from somewhere
-#define TOTAL_SIZE (DISK_SIZE * BLOCK_SIZE)
-#define SECTOR_SIZE 512 // 8 sectors = 1 block
-#define ROOT_DIRECTORY_ENTRIES 8
+#define BLOCK_SIZE SZ_PAGE // set block_size to size of page for consistentcy
+#define TOTAL_SIZE (DISK_SIZE * BLOCK_SIZE) // num of bytes in total
+#define ROOT_DIRECTORY_ENTRIES 8 // how many entries can reside in root?
+
+// String constants
 #define MAX_COMMANDS 8 // number of words in command as a max
-#define MAX_INPUT 200 // number of characters to allow as input
-// #define ROOT_DIRECTORY_ENTRIES 4
-#define MAX_FILENAME_LENGTH 31
-#define MAX_PATH_LENGTH 1023
-#define MAX_DEPTH 16
-#define FS_BUFFER_SIZE 4096
+#define MAX_INPUT 255 // number of characters to allow as input
+#define MAX_FILENAME_LENGTH 31 // Max length of a filename string
+#define MAX_PATH_LENGTH 255 // max path length at any given time
 
 
 typedef enum EntryType {
-    FILE = 0x01,      // Attribute for files
-    DIRECTORY = 0x02  // Attribute for directories
+    FILE = 0x01,      // Type for files
+    DIRECTORY = 0x02  // Type for directories
 } EntryType;
 
 typedef enum PathType {
@@ -45,42 +44,41 @@ typedef enum PathType {
 } PathType;
 
 typedef enum OpType {
-    FIND = 0x01, 	// Absolute path
-    CREATE = 0x02 	// Relative path
+    FIND = 0x01, 	// Find operation
+    CREATE = 0x02 	// Create operation
 } OpType;
 
 // Define DirectoryEntry structure
 typedef struct DirectoryEntry {
     char filename[MAX_FILENAME_LENGTH + 1];   // Name of the file or directory
-    uint32_t size;                            // Size of the file in bytes
-    EntryType type;                           // File or directory
-    uint32_t cluster;                         // Starting cluster of the file's data
-    struct DirectoryEntry *next;              // Pointer to the next directory entry in the linked list
-	uint8_t depth;
-    struct Directory *subdirectory;           // Pointer to the subdirectory (if it's a directory)
-	char path[MAX_PATH_LENGTH + 1];
+    uint32_t size;					// Size of the file in bytes
+    EntryType type;					// File or directory
+    uint32_t cluster;				// Starting cluster of the file's data
+    struct DirectoryEntry *next;	// Pointer to the next directory entry
+	uint8_t depth;					// How many directories are we from root?
+    struct Directory *subdirectory;	// Pointer to the subdirectory if applicable
+	char path[MAX_PATH_LENGTH + 1];	// Path for this entry
 } DirectoryEntry;
 
 typedef struct Directory {
-    DirectoryEntry *files[ROOT_DIRECTORY_ENTRIES]; // Array of directory entries (files)
-    uint32_t num_files; // Number of files in the directory
-    // Add any other metadata or properties you need for directories
+    DirectoryEntry *files[ROOT_DIRECTORY_ENTRIES]; // Array of dir entries
+    uint32_t num_files;	// Number of files in the directory
 } Directory;
 
 typedef struct DeconstructedPath {
     char filename[MAX_FILENAME_LENGTH];	// String to store file name
 	char path[MAX_PATH_LENGTH];			// String to store full path string
-    uint8_t num_dirs;  					// Number of directory names
-    char *dirs[MAX_FILENAME_LENGTH];  	// Array to store directory names
-    char *paths[MAX_FILENAME_LENGTH];  	// Array to store path entries
-	PathType path_type;
-	EntryType entry_type;
-	OpType op_type;
-} DeconstructedPath; // TODO SEAN: to fix, check for 'first /' not '/ first
+    uint8_t num_dirs;					// Number of directory names
+    char *dirs[MAX_FILENAME_LENGTH];	// Array to store directory names
+    char *paths[MAX_FILENAME_LENGTH];	// Array to store path entries
+	PathType path_type;					// Absolute or Relative?
+	EntryType entry_type;				// File or Directory?
+	OpType op_type;						// Create or find?
+} DeconstructedPath;
 
 typedef struct FATEntry {
-	uint32_t next_cluster;
-	uint8_t status;
+	uint32_t next_cluster;	// next cluster for this FATEntry
+	uint8_t status;			// status (FAT_EOC, FAT_FREE, FAT_IN_USE)
 } FATEntry;
 
 typedef struct FAT {
@@ -88,10 +86,9 @@ typedef struct FAT {
 } FAT;
 
 typedef struct FileSystem {
-	// Boot Sector Information
-	uint16_t bytes_per_cluster;
-	uint16_t reserved_cluster_count;
-	uint32_t total_clusters;
+	uint16_t bytes_per_cluster;			// how many bytes are in this cluster?
+	uint16_t reserved_cluster_count;	// how many clusters reserved for FS?
+	uint32_t total_clusters;			// total num of clusters
 
 	// FAT Information
 	FAT *fat;
@@ -101,7 +98,7 @@ typedef struct FileSystem {
 	char volume_label[12];
 	char file_system_type[8];
 
-	// Disk (RAMdisk)
+	// Disk (RAMdisk for now)
 	StorageInterface disk;
 
 	// General purpose cache or buffer
@@ -116,24 +113,6 @@ typedef struct FileSystem {
 #endif // END Definitions
 
 #if 1  // BEG Directories
-/*
-** Print Working Directory
-*/
-void pwd( void );
-
-/*
-** Create Directory
-** @param path Path of the directory to create.
-** @return 0 on success, -1 on failure.
-*/
-int create_dir(const char *path);
-
-/*
-** Delete Directory
-** @param path Path of the directory to delete.
-** @return 0 on success, -1 on failure.
-*/
-int delete_dir(const char *path);
 
 /*
 ** Open Directory
@@ -165,43 +144,12 @@ int list_dir_contents(const char *dir_name, bool_t box);
 int change_dir(const char *path);
 
 /*
-** Get Current Directory
-** @return Path of the current directory.
-*/
-const char *get_current_dir( void );
-
-/*
 ** Move or Rename Directory
 ** @param old_path Current path of the directory.
 ** @param new_path New path for the directory.
 ** @return 0 on success, -1 on failure.
 */
 int move_dir(const char *old_path, const char *new_path);
-
-/*
-** Check if Directory Exists
-** @param path Path of the directory to check.
-** @return 1 if directory exists, 0 if not.
-*/
-int dir_exists(const char *path);
-
-
-/*
-** Get Directory Metadata
-** @param path Path of the directory.
-** @param metadata Pointer to the DirectoryMetadata structure to store metadata.
-** @return 0 on success, -1 on failure.
-*/
-// int get_directory_metadata(const char *path, DirectoryMetadata *metadata);
-
-/*
-** Traverse Directory Tree
-** @param root_path Root path of the directory tree to traverse.
-** @param callback Pointer to the callback function to be called for each directory.
-** @return 0 on success, -1 on failure.
-*/
-DirectoryEntry *traverse_directory(DirectoryEntry *directory_entry, int depth, const char *path_to_search);
-// void traverse_directory(Directory *directory, int depth);
 
 #endif // END Directories
 
@@ -213,7 +161,7 @@ DirectoryEntry *traverse_directory(DirectoryEntry *directory_entry, int depth, c
 ** Called by the CIO module when a key is pressed on the
 ** console keyboard.  Depending on the key, it will print
 ** statistics on the console display, or will cause the
-** user shell process to be dispatched.
+** user fs_shell process to be dispatched.
 **
 ** This code runs as part of the CIO ISR.
 */
@@ -321,9 +269,6 @@ int _fs_print_entry(DirectoryEntry *entry);
 
 void _fs_initialize_directory_entry(DirectoryEntry *entry, const char *filename, uint32_t size, EntryType type, uint32_t cluster, DirectoryEntry *next, uint8_t depth, const char *path);
 
-// Add more function prototypes as needed for your FAT32 filesystem implementation
-
 #endif // END Filesystem
-
-#endif /* FAT32_H_ */
+#endif /* FILESYSTEM_H_ */
 
