@@ -1,0 +1,41 @@
+Filesystem Module:
+	Description: Manages the filesystem operations such as 
+		file creation, deletion, reading, and writing.
+	Inner Organization: Utilizes a RAMdisk driver for in-memory data storage.
+	Data Structures:
+		DirectoryEntry: Represents a file or directory entry in the filesystem
+		Directory: Represents a directory in the filesystem.
+		DeconstructedPath: Structure for parsed path information.
+		FATEntry: Represents a File Allocation Table entry.
+		FAT: File Allocation Table.
+		FileSystem: Structure containing filesystem metadata and configuration
+	API:
+		Initialization: _fs_init(), _fs_mount()
+		File Operations: _fs_read_file(), _fs_write_file() fs_create_file(), 
+			_fs_create_dir(), _fs_delete_entry()
+		Directory Operations: list_dir_contents(), change_dir()
+		Entry Operations: _fs_find_entry()
+		Filesystem Shell: _fs_shell()
+
+RAMdisk Module:
+	Description: Provides a RAMdisk driver for in-memory data storage.
+	Inner Organization: Manages the RAMdisk's initialization, read, write, 
+		and space allocation operations.
+	Data Structures: 
+		StorageInterface: struct of generic function pointers
+		MemoryPool: pool of memory pages
+		Chunk: is or is not "allocated", size, and next pointer
+	API:
+		Initialization: ramdisk_init()
+		Read/Write Operations: ramdisk_read(), ramdisk_write()
+		Space Allocation: ramdisk_request_space(), ramdisk_release_space()
+
+Helper Functions Module:
+	Description: Provides various helper functions to support filesystem 
+		implementation.
+	Inner Organization: Contains functions for printing, buffer manipulation, 
+		path parsing, FAT management, and directory operations.
+	Data Structures: None explicitly mentioned.
+	API: Various helper functions like show_header_info(), init_fs_buffer(), 
+		clear_fs_buffer(), parse_path(), dump_fat(), etc.
+

@@ -7,8 +7,9 @@
 */
 
 #include "common.h"
-
+#include "audio.h"
 #include "users.h"
+#include "beep.h"
 
 /*
 ** USER PROCESSES
@@ -36,7 +37,7 @@
 USERMAIN(idle);  USERMAIN(shell);
 
 USERMAIN(main1); USERMAIN(main2); USERMAIN(main3); USERMAIN(main4);
-USERMAIN(main5); USERMAIN(main6);
+USERMAIN(main5); USERMAIN(main6); USERMAIN(mainfs);
 
 USERMAIN(userA); USERMAIN(userB); USERMAIN(userC); USERMAIN(userD);
 USERMAIN(userE); USERMAIN(userF); USERMAIN(userG); USERMAIN(userH);
@@ -44,7 +45,7 @@ USERMAIN(userI); USERMAIN(userJ); USERMAIN(userK); USERMAIN(userL);
 USERMAIN(userM); USERMAIN(userN); USERMAIN(userO); USERMAIN(userP);
 USERMAIN(userQ); USERMAIN(userR); USERMAIN(userS); USERMAIN(userT);
 USERMAIN(userU); USERMAIN(userV); USERMAIN(userW); USERMAIN(userX);
-USERMAIN(userY); USERMAIN(userZ);
+USERMAIN(userY); USERMAIN(userZ); USERMAIN(sound);
 
 /*
 ** The user processes
@@ -115,6 +116,14 @@ USERMAIN(userY); USERMAIN(userZ);
 #if defined(SPAWN_T) || defined(SPAWN_U) || defined(SPAWN_V)
 #include "userland/main6.c"
 #include "userland/userW.c"
+#endif
+
+#if defined(SPAWN_FS)
+#include "userland/mainfs.c"
+#endif
+
+#if defined(SPAWN_SOUND)
+#include "userland/sound.c"
 #endif
 
 /*

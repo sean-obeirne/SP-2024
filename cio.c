@@ -54,6 +54,9 @@ static unsigned int    max_x, max_y;
 // pointer to input notification function
 static void (*__c_notify)(int);
 
+// initially set to record characters
+static int should_record = 0;
+
 #ifdef  SA_DEBUG
 #include <stdio.h>
 #define __cio_putchar   putchar
@@ -69,6 +72,11 @@ static void (*__c_notify)(int);
 ** __c_putchar_at: physical output to the video memory
 ** __c_setcursor: set the cursor location (screen coordinates)
 */
+// Function to toggle the recording flag
+void __cio_set_record(int record) {
+    should_record = record;
+}
+
 static void __c_setcursor( void ) {
     unsigned addr;
     unsigned int y = curr_y;
@@ -600,7 +608,7 @@ static int __c_input_scan_code( int code ) {
                 ** Store character only if there's room
                 */
                 rval = code & ctrl_mask;
-                if( next != next_char ) {
+                if( should_record && next != next_char ) {
                     *next_space = code & ctrl_mask;
                     next_space = next;
                 }
@@ -654,20 +662,20 @@ int __cio_getchar( void ) {
 int __cio_gets( char *buffer, unsigned int size ) {
     char    ch;
     int count = 0;
+	should_record = 1;
 
     while( size > 1 ) {
         ch = __cio_getchar();
-        if( ch == EOT ) {
+        if( ch == EOT || ch == '\n' ) {
             break;
-        }
-        *buffer++ = ch;
+        } else{
+        	*buffer++ = ch;
+		}
         count += 1;
         size -= 1;
-        if( ch == '\n' ) {
-            break;
-        }
     }
     *buffer = '\0';
+	should_record = 0;
     return count;
 }
 

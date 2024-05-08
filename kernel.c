@@ -14,6 +14,9 @@
 #include "queues.h"
 #include "procs.h"
 #include "users.h"
+#include "EnumPCI.h"
+#include "filesystem.h"
+#include "ramdisk.h"
 
 #include "bootstrap.h"
 #include "cio.h"
@@ -23,6 +26,9 @@
 #include "sio.h"
 #include "support.h"
 #include "syscalls.h"
+#include "audio.h"
+#include "filesystem.h"
+#include "ramdisk.h"
 
 // need address of the init() function
 USERMAIN( init );
@@ -301,8 +307,10 @@ void _kinit( void ) {
 
 #if defined(CONSOLE_STATS) 
 	__cio_init( _kshell );
+#elif defined(SPAWN_FS)
+	__cio_init( _fs_shell );
 #else
-	__cio_init( NULL );	   // no console callback routine
+	__cio_init( NULL ); // no console callback routine
 #endif
 
 #ifdef TRACE_CX
@@ -358,17 +366,28 @@ void _kinit( void ) {
 #endif
 	_sio_init();
 	_sys_init();
+	
 #if TRACING_SYSCALLS || TRACING_SYSRETS
 	__delay(50);
 #endif
+	__cio_puts("init start");
+	initPci();
+	initAudio();
+	__cio_puts("init Complete");
+	
+
+	_fs_init();
+
+	StorageInterface disk;
+	_storage_init(&disk);
+	disk.init(DISK_SIZE);
+
 
 	__cio_puts( "\nModule initialization complete.\n" );
 	__cio_puts( "-------------------------------\n" );
 
 	// report our configuration options
 	_kreport( true );
-
-	__delay( 100 );	 // about 2.5 seconds
 
 	/*
 	** Other tasks typically performed here:

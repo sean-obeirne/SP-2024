@@ -8,3 +8,6 @@ prog.dis
 prog.nl
 offsets.h
 *.swp
+.vscode
+bootstrap.s
+copycode.sh

@@ -8,7 +8,7 @@
 #define INIT_H_
 
 #include "users.h"
-
+#include "mainfs.c"
 #include "ulib.h"
 
 /**
@@ -179,6 +179,12 @@ static proc_t spawn_table_2[] = {
 #ifdef SPAWN_V
 	PROCENT( main6, UserPrio, "V", "userV", "V", "6", "k" ),
 #endif
+#ifdef SPAWN_FS
+	PROCENT( mainfs, UserPrio, "Z", "userZ", "Z", "6", "k" ),
+#endif
+#ifdef SPAWN_SOUND
+	PROCENT( sound, UserPrio, "X", "userX", "X", "6", "k" ),
+#endif
 	
 	// a dummy entry to use as a sentinel
 	// PROCENT( 0, 0, 0, 0 )
@@ -339,7 +345,11 @@ static int32_t run( char which )
 		}
 	}
 
-	sprint( buf, "+++ Shell: unknown cmd '%c'\n", which );
+	if( which == 'F'){
+		sprint( buf, "+++ Shell: yeah do somethin '%c'\n", which );
+	} else {
+		sprint( buf, "+++ Shell: unknown cmd '%c'\n", which );
+	}
 	cwrites( buf );
 
 	// unlikely to be an actual error code

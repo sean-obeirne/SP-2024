@@ -1,0 +1,19 @@
+Taking on this task I definitely way underestimated the complexity of the task
+as it actually was. Audio always has picked my interest for it is an
+interesting way that the computer can reach and communicate with the real
+world. In fact my first project was getting an arduino to play audio from 
+pre-made files. Although that was far easier than this task. Enumerating
+the PCI was extremely straightforward. Despite this I still managed to get
+over eager about bit shifting. Hence the do not duplicate bitshift comment. I 
+then immediately began to struggle with the audio. I attempted to follow along
+with the CORBS ring method. This was a complete failure as I couldn't quite
+determine why but even with my interrupt enabled the program would quite every
+time that the command call was made.
+
+Although I never really got the chance to implement the WAV file parsing. It
+looked like it could be accomplished with relative ease as you can use a buffer
+to read each sample and other data such as the number of channels to 
+play over.
+
+Overall, I learned a tremendous amount and appreciated the difficulty of this
+project and the fact that it challenged me in numerous ways.
