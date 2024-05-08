@@ -1,0 +1,16 @@
+kernel.c - Kernel file, initializes the audio by calling initAudio during the boot process.
+
+enumPci.c - Enumerates the PCI using the checkBuses funciton. To avoid general slowness there are lots of cutoff points
+to move to the next bus. Generic and should work on any audio driver as it only checks the Class and Subclass fields for
+final acceptance.
+
+audio.c - Initializes the device to a state that is user ready. This is where playSound is an ideally would be able to
+be called by a buffer and written to the CORB Ring.
+
+userland - In the userland directory there is a function called sound.c to play the sound when a user presses X. This got
+sidetracked and I was never got the chance to take the command out of kernel and entirely make it a user command.
+
+beep.h - A generic Data buffer to see if I could get anything to play at all.
+
+Not present - wav.c/wav.h this was going to be my wav buffer but never got a chance to implement in the mayhem of figuring 
+out the rest of audio.

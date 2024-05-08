@@ -15,6 +15,8 @@
 #include "procs.h"
 #include "users.h"
 #include "EnumPCI.h"
+#include "filesystem.h"
+#include "ramdisk.h"
 
 #include "bootstrap.h"
 #include "cio.h"
@@ -364,19 +366,22 @@ void _kinit( void ) {
 #endif
 	_sio_init();
 	_sys_init();
+	
+#if TRACING_SYSCALLS || TRACING_SYSRETS
+	__delay(50);
+#endif
 	__cio_puts("init start");
 	initPci();
 	initAudio();
 	__cio_puts("init Complete");
+	
 
 	_fs_init();
+
 	StorageInterface disk;
 	_storage_init(&disk);
 	disk.init(DISK_SIZE);
 
-#if TRACING_SYSCALLS || TRACING_SYSRETS
-	__delay(50);
-#endif
 
 	__cio_puts( "\nModule initialization complete.\n" );
 	__cio_puts( "-------------------------------\n" );

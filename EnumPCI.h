@@ -2,8 +2,8 @@
 // Intended to enumerate PCI and return devices of the specified config type
 
 
-#ifndef EnumPCI.H
-#define EnumPCI.H
+#ifndef EnumPCI_H
+#define EnumPCI_H
 
 #include "common.h"
 #include "x86arch.h"
@@ -21,7 +21,7 @@ struct device {
 	uint32_t baseAdd1;
 
 
-} Device;
+} typedef(Device);
 
 void checkAllBuses(void);
 
