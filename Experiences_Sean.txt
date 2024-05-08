@@ -1,0 +1,13 @@
+Sean O'Beirne
+
+Experiences
+
+I definitely had some interesting time this semester with this project. After
+starting a little after Spring break, I started with designing the general 
+filesystem structure and wrote some code to do some basic operations. One
+notable experience with this project is that I had to sort of re-design my
+module multiple times, and I tried to hack together the two designs but I didn't
+really wind up being happy with how the logic was working. I think, if I could
+do things over, I probably would have done some type of FS implementation in 
+python first, just so I could have more quickly mock up and checked out some 
+design decisions.

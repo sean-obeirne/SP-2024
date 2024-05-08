@@ -1,0 +1,57 @@
+FS_SHELL(3)                                      FS_SHELL(3)
+
+NAME
+       _fs_shell - Filesystem Shell Command Handler
+
+SYNOPSIS
+       void _fs_shell(int code);
+
+DESCRIPTION
+       The _fs_shell function is responsible for handling shell
+       commands related to filesystem manipulation. It interprets the
+       input code and performs the corresponding action.
+
+ARGUMENTS
+       code   The code representing the command to be executed.
+
+COMMANDS
+       'f'    Make new file: Prompts the user for a file path,
+              creates a new file at the specified location, and
+              prints the path of the created file.
+
+       'd'    Make new directory: Prompts the user for a directory
+              path, creates a new directory at the specified
+              location, and prints the path of the created directory.
+
+       'x'    Delete entry: Prompts the user for the path of an
+              entry (file or directory), deletes the entry at the
+              specified location, and prints the path of the deleted
+              entry.
+
+       'l'    List cwd contents: Lists the contents of the current
+              working directory.
+
+       '/' or 'c' Change directory: Prompts the user for a new
+              absolute path, changes the current working directory
+              to the specified path.
+
+       'r'    Dump root: Lists the contents of the root directory.
+
+       't'    Dump FAT: Dumps the File Allocation Table (FAT)
+              contents.
+
+       'a'    Print last parsed path: Prints the last parsed path.
+
+       'h'    Help message: Prints a help message listing available
+              commands.
+
+       '\r' or '\n' No operation: Ignores carriage return or newline
+              characters.
+
+       default Unknown request: Prints a message indicating that the
+              provided code is unrecognized.
+
+AUTHOR
+       Written by Sean O'Beirne
+
+FS_SHELL(3)
