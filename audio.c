@@ -67,8 +67,8 @@ void playSound(uint8_t *data, uint32_t dataLength){
 	__outw(AUDIODEVICE->baseAdd0 + 0x3c, 0xFFFF);
 
 	// Attempt to get the register to output this is where the interrupt occurs
-	//__outw(AUDIODEVICE->baseAdd0 + 0x28, 0x7FFF7FFF);
-	//__outw(AUDIODEVICE->baseAdd0 + 0x20, 0x00200204);
+	//__outw(AUDIODEVICE->baseAdd0 + 0x28, );
+	//__outw(AUDIODEVICE->baseAdd0 + 0x20, );
 
 	//Clear CORB
 	__outw(AUDIODEVICE->baseAdd0 + 0x00, 0x0);
