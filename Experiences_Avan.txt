@@ -10,5 +10,10 @@ with the CORBS ring method. This was a complete failure as I couldn't quite
 determine why but even with my interrupt enabled the program would quite every
 time that the command call was made.
 
+Although I never really got the chance to implement the WAV file parsing. It
+looked like it could be accomplished with relative ease as you can use a buffer
+to read each sample and other data such as the number of channels to 
+play over.
+
 Overall, I learned a tremendous amount and appreciated the difficulty of this
 project and the fact that it challenged me in numerous ways.
